@@ -1,15 +1,18 @@
 """Simulador de progressão do Awaken System.
 
 Simula, dia a dia, quanto tempo três perfis de jogador demoram a atingir os
-níveis importantes (Job Change e avanços de classe), para calibrar a curva de XP
+níveis importantes (subidas de ranking de cultivação), para calibrar a curva de XP
 e os custos em Gold antes de os fixar na app.
 
-Uso:  python tools/simular_progressao.py
+Uso:  python tools/simular_progressao.py            (valores da especificação)
+      python tools/simular_progressao.py 120 1.2    (testar outra curva: C e P)
 """
 
+import sys
+
 # --- Parâmetros da curva de XP: XP para passar do nível n para n+1 = C * n^P ---
-C = 12
-P = 1.5
+C = 130
+P = 1.2
 
 # --- Multiplicadores de XP (valores da especificação) ---
 BONUS_STREAK_MAX = 0.30   # +1 % por dia de streak, até +30 %
@@ -19,13 +22,14 @@ DIAS_SKILLS_MAX = 730     # assumimos que as Skills chegam ao teto em ~2 anos
 # --- Fração do Gold ganho que o jogador gasta na Shop ---
 GASTO_SHOP = 0.5
 
-# --- Marcos de classe: (nível, custo em Gold) ---
+# --- Rankings de cultivação: (nome, nível mínimo, custo em Gold) ---
 MARCOS = [
-    ("1st Job Change", 40, 0),
-    ("2nd Advancement", 50, 3_000),
-    ("3rd Advancement", 65, 8_000),
-    ("4th Advancement", 80, 15_000),
-    ("Monarch", 100, 30_000),
+    ("Bronze", 10, 1_000),
+    ("Silver", 25, 4_000),
+    ("Gold", 40, 10_000),
+    ("Dark Gold", 55, 20_000),
+    ("Legend", 70, 35_000),
+    ("Heavenly Fate", 85, 55_000),
 ]
 
 # --- Perfis: XP base potencial por dia (soma dos ranks) e taxa média de cumprimento r ---
@@ -66,8 +70,6 @@ def simular(xp_base: float, r: float, max_dias: int = 3650) -> dict:
                 marcos_pendentes.pop(0)
             else:
                 break
-        if 10 not in resultado and nivel >= 10:
-            resultado[10] = dia
         if not marcos_pendentes:
             break
     return resultado
@@ -84,11 +86,13 @@ def formatar(dias) -> str:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 3:
+        C, P = float(sys.argv[1]), float(sys.argv[2])
     print(f"Curva: XP(n) = {C} * n^{P}\n")
-    colunas = ["Nível 10"] + [f"{m[0]} (Lv {m[1]})" for m in MARCOS]
+    colunas = [f"{m[0]} (Lv {m[1]}, {m[2]} G)" for m in MARCOS]
     print("| Perfil | " + " | ".join(colunas) + " |")
     print("|---" * (len(colunas) + 1) + "|")
     for nome, p in PERFIS.items():
         res = simular(p["xp_base"], p["r"])
-        celulas = [formatar(res.get(10))] + [formatar(res.get(m[0])) for m in MARCOS]
+        celulas = [formatar(res.get(m[0])) for m in MARCOS]
         print(f"| {nome} | " + " | ".join(celulas) + " |")

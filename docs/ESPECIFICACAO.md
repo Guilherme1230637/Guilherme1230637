@@ -103,34 +103,51 @@ Exemplo "Estudar 60 min" (rank C): INT 60 %, WIS 30 %, TEN 10 %
 Ganho de atributo_i = pontos_base(rank) × peso_i × r
 → INT +0,36 · WIS +0,18 · TEN +0,06   (com r = 1)
 ```
-Os atributos guardam casas decimais e a UI mostra o valor inteiro. Além disso, cada **Level Up dá 3 pontos livres** para distribuíres à mão (mais os extras dos tiers de classe, ver 3.7).
+Os atributos guardam casas decimais e a UI mostra o valor inteiro. Além disso, cada **Level Up dá 3 pontos livres** para distribuíres à mão (mais os extras de cada subida de ranking, ver 3.7).
 
-### 3.4 Nível e curva de XP (exponencial suave)
+### 3.4 Nível e curva de XP (crescimento polinomial suave)
 ```
-XP necessário para passar do nível n para n+1 = round(12 × n^1.5)
+XP necessário para passar do nível n para n+1 = round(130 × n^1.2)
 ```
 | Nível | XP para o seguinte |
 |---|---|
-| 1 | 12 |
-| 5 | 134 |
-| 10 | 379 |
-| 25 | 1 500 |
-| 50 | 4 243 |
-| 100 | 12 000 |
+| 1 | 130 |
+| 5 | 897 |
+| 10 | 2 060 |
+| 25 | 6 187 |
+| 40 | 10 875 |
+| 50 | 14 214 |
+| 85 | 26 869 |
 
-**Justificação:** os primeiros níveis são rápidos, o que motiva no início, e depois o ritmo abranda sem crescer tão depressa como uma exponencial pura (`a^n`), que tornaria os níveis altos impossíveis.
+**Objetivo de design:** um jogador Regular deve demorar **1,5 a 2 anos a chegar ao nível 40**.
 
-**Como foi calibrada (`tools/simular_progressao.py`):** a primeira proposta (`100 × n^1.5`) punha um jogador normal
-a demorar ~4 anos até ao nível 40. O simulador corre a progressão dia a dia para 3 perfis e
-permitiu escolher o coeficiente 12:
+**Porque `n^1.2` e não `n^1.5`:** os dois cumprem o nível 40 em ~20 meses (com `45 × n^1.5`), mas o `n^1.5` torna os
+níveis altos desproporcionalmente caros (nível 85 ≈ 9,6 anos contra ≈ 8,4 anos com `n^1.2`). Um expoente
+menor dá uma curva mais "plana" no topo.
 
-| Perfil (XP base/dia, cumprimento) | Nível 10 | 1st Job Change (Lv 40) | 2nd Adv. (Lv 50) | 3rd Adv. (Lv 65) | 4th Adv. (Lv 80) | Monarch (Lv 100) |
+**Limitação matemática (importante):** com o nível 40 a demorar ~1,75 anos, **nenhuma curva crescente** consegue
+pôr o nível 85 abaixo de ~7 anos (mesmo a linear `250 × n` dá 7,3 anos), porque o XP total é a soma de
+todos os níveis anteriores. O topo do ranking é, por isso, um objetivo de muito longo prazo, como num MMORPG.
+
+**Como foi calibrada (`tools/simular_progressao.py`):** o simulador corre a progressão dia a dia para 3 perfis de
+jogador. Curvas testadas para o perfil Regular:
+
+| Curva | Nível 40 | Nível 85 |
+|---|---|---|
+| `12 × n^1.5` (1.ª versão) | 6,1 meses | ~2,8 anos |
+| `45 × n^1.5` | 20,1 meses | 9,6 anos |
+| **`130 × n^1.2` (escolhida)** | **21,7 meses** | **8,4 anos** |
+| `250 × n^1.0` (linear) | 21,9 meses | 7,3 anos |
+
+Resultado final com os custos de Gold da secção 3.7:
+
+| Perfil (XP base/dia, cumprimento) | Bronze (Lv 10) | Silver (Lv 25) | Gold (Lv 40) | Dark Gold (Lv 55) | Legend (Lv 70) | Heavenly Fate (Lv 85) |
 |---|---|---|---|---|---|---|
-| Casual (145, 65 %) | 14 dias | 12,5 meses | 20,6 meses | 3,1 anos | 4,9 anos | 8,4 anos |
-| Regular (250, 80 %) | 7 dias | 6,1 meses | 10,2 meses | 18,5 meses | 2,4 anos | 4,0 anos |
-| Hardcore (420, 95 %) | 4 dias | 3,1 meses | 5,2 meses | 9,7 meses | 15,5 meses | 2,1 anos |
+| Casual (145, 65 %) | 2,5 meses | 17,2 meses | 3,6 anos | 7,0 anos | > 10 anos | > 10 anos |
+| Regular (250, 80 %) | 37 dias | 8,4 meses | 21,7 meses | 3,4 anos | 5,5 anos | 8,4 anos |
+| Hardcore (420, 95 %) | 19 dias | 4,3 meses | 11,4 meses | 21,4 meses | 2,9 anos | 4,2 anos |
 
-Pressupostos do modelo: bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, metade do Gold é gasto na Shop.
+Pressupostos do modelo: hábitos fixos (na realidade o jogador tende a juntar hábitos de rank mais alto, o que acelera), bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, metade do Gold é gasto na Shop. Para o Regular, o Gold nunca atrasa um ranking: o limite é o nível.
 
 ### 3.5 HP
 ```
@@ -143,30 +160,33 @@ Recuperação: +10 HP por cada dia com todas as dailies a 100 %; poções (Loot)
 |---|---|---|---|---|---|---|
 | 1–9 | 10–19 | 20–34 | 35–49 | 50–69 | 70–99 | 100+ |
 
-### 3.7 Job Change e avanços de classe
-**1st Job Change (nível 40):** aparece a *Job Change Quest*: **14 dias seguidos** em que todas as dailies atingem o
-limiar da sua streak. Ao completá-la recebes a classe do teu **atributo dominante** (o mais alto nesse momento).
-A partir daí a classe segue a sua linha. Cada avanço exige **nível mínimo + Gold** e o Gold é **pago** (sai da conta).
+### 3.7 Ranking de cultivação (estilo *Tales of Demons and Gods*)
+Substitui o antigo Job Change e as classes. Os **atributos e as Skills não mudam**.
 
-| Tier | Requisito | STR | AGI | INT | WIS | PER | CHA | VIT | END | TEN |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Lv 40 + Job Change Quest | Warrior | Assassin | Mage | Sage | Ranger | Commander | Guardian | Knight | Berserker |
-| 2 | Lv 50 + 3 000 Gold | Gladiator | Shadow Blade | Sorcerer | Oracle | Sniper | Tactician | Paladin | Iron Knight | Unyielding |
-| 3 | Lv 65 + 8 000 Gold | Warlord | Phantom | Archmage | Hierophant | Eagle Eye | General | Holy Knight | Juggernaut | Undying |
-| 4 | Lv 80 + 15 000 Gold | Titan | Night Reaper | Arcane Sovereign | Grand Sage | Starseer | Sovereign | Aegis | Colossus | Immortal |
-| 5 | Lv 100 + 30 000 Gold | Monarch of Iron | Monarch of Shadows | Monarch of Knowledge | Monarch of Wisdom | Monarch of Insight | Monarch of Crowns | Monarch of Life | Monarch of Stone | Monarch of Will |
+- Começas **Unranked**. Para subir de ranking precisas de **nível mínimo + Gold**. O Gold é **pago** e sai da conta.
+- **Sem bottleneck:** continuas a subir de nível normalmente, mesmo sem Gold para o próximo ranking.
+- Os rankings sobem **por ordem**, sem saltar nenhum. Se já tens nível para dois, pagas um de cada vez.
+- **Estrelas (1★ a 5★):** dentro de cada ranking ganhas **+1★ a cada 3 níveis**, automaticamente e sem Gold (ex.: "3★ Silver").
+  Servem para mostrar o progresso dentro do ranking.
 
-**Recompensas de cada tier** (extra aos 3 pontos livres normais por nível):
-| Tier | Pontos livres extra | Bónus de XP nos hábitos cujo atributo principal é o da classe |
-|---|---|---|
-| 1 | +10 | +5 % |
-| 2 | +15 | +10 % |
-| 3 | +20 | +15 % |
-| 4 | +25 | +20 % |
-| 5 | +30 | +25 % |
+| Ranking | Requisito | 1★ → 5★ (níveis) | Pontos livres extra | Bónus de XP global |
+|---|---|---|---|---|
+| Unranked | — (início) | — | — | — |
+| **Bronze** | Lv 10 + 1 000 Gold | 10 · 13 · 16 · 19 · 22 | +5 | +2 % |
+| **Silver** | Lv 25 + 4 000 Gold | 25 · 28 · 31 · 34 · 37 | +10 | +4 % |
+| **Gold** | Lv 40 + 10 000 Gold | 40 · 43 · 46 · 49 · 52 | +15 | +6 % |
+| **Dark Gold** | Lv 55 + 20 000 Gold | 55 · 58 · 61 · 64 · 67 | +20 | +8 % |
+| **Legend** | Lv 70 + 35 000 Gold | 70 · 73 · 76 · 79 · 82 | +25 | +10 % |
+| **Heavenly Fate** | Lv 85 + 55 000 Gold | 85 · 88 · 91 · 94 · 97 | +30 | +12 % |
+
+- **Pontos livres extra:** somam-se uma vez, no momento do breakthrough, aos 3 pontos normais por nível.
+- **Bónus de XP global:** aplica-se a todos os hábitos e **não é cumulativo** (vale o do ranking atual).
+- Popup: `[SYSTEM] Breakthrough successful! You have reached Silver Rank.`
+- **Estrelas só com o ranking:** se não pagaste a subida, ficas em 5★ do ranking atual (ex.: 5★ Bronze no nível 30).
 
 **Porque é que o Gold é pago e não apenas "possuído":** funciona como *gold sink*. Obriga a escolher entre gastar
-na Shop (recompensas reais) e poupar para evoluir a classe, e impede a acumulação infinita de Gold.
+na Shop (recompensas reais) e poupar para subir de ranking, e impede a acumulação infinita de Gold.
+
 
 ### 3.8 Títulos
 Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Penalty Zone; "Unbreakable" = streak de 66 dias). O título ativo aparece na Status Window.
@@ -255,7 +275,7 @@ Exemplos: "First Step" (1.ª quest), "Week Warrior" (7 dias a 100 %), "Level 10"
 ---
 
 ## 11. Interface
-- **Ecrã principal:** à esquerda a **Status Window** (nome, nível, Hunter Rank, título, classe, barras de HP e XP, 9 atributos, pontos livres). À direita as **Quests** em separadores **Daily / Weekly / Monthly**.
+- **Ecrã principal:** à esquerda a **Status Window** (nome, nível, Hunter Rank, ranking de cultivação com estrelas, título, barras de HP e XP, 9 atributos, pontos livres). À direita as **Quests** em separadores **Daily / Weekly / Monthly**.
 - **Barra lateral:** Status · Quests · Skills · Inventory · Shop · Calendar · Report · Achievements · Settings.
 - Popups animados `[SYSTEM]` para Level Up, Skill nova, Loot e Penalty.
 
