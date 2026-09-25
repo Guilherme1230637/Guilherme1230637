@@ -46,7 +46,8 @@ XP_SCROLL_MULTIPLIER = 2.0
 # --- HP e Penalty Zone (secções 3.5 e 4) ---
 BASE_HP = 100
 HP_PER_VIT_POINT = 5
-PERFECT_DAY_HP_REGEN = 10
+HP_REGEN_PER_DAY = 15           # regeneração diária = 15 × % média dos hábitos diários
+PERFECT_DAY_HP_BONUS = 5        # extra num dia com todos os diários a 100 %
 PENALTY_XP_LOSS = 0.10          # fração do XP necessário para o nível atual
 PENALTY_GOLD_LOSS = 0.20        # fração do Gold atual
 PENALTY_QUEST_HP_RESTORE = 0.50  # fração do HP máximo devolvida ao cumprir a Penalty Quest

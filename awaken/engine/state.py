@@ -203,8 +203,8 @@ class GameState:
                 for tag in habit.tags:
                     self.stats.minutes_by_tag[tag] = self.stats.minutes_by_tag.get(tag, 0) + entry.value
 
-        self._close_perfect_day(report, daily_ratios)
-        self._close_penalty(day, damage, rng, report)
+        self._close_penalty(day, damage, rng, report)   # primeiro o dano (pode levar à Penalty Zone)...
+        self._close_regen(report, daily_ratios)          # ...depois a regeneração (não cura na Penalty Zone)
         self._unlock_skills(namer, report)
         report.achievements = self._check_achievements()
         self.last_closed_day = day
@@ -249,13 +249,23 @@ class GameState:
                     report.skill_level_ups.append((skill.name, skill.level))
                     self.week.skill_level_ups += gained
 
-    def _close_perfect_day(self, report: DayReport, daily_ratios: list[float]) -> None:
-        if report.paused or not daily_ratios:
+    def _close_regen(self, report: DayReport, daily_ratios: list[float]) -> None:
+        """Regeneração diária proporcional ao cumprimento (secção 3.5).
+
+        HP = 15 × % média dos hábitos diários (+5 num dia perfeito). Sem hábitos diários, regenera os 15 completos
+        (não havia nada diário para falhar). Dias em pausa não regeneram nem contam para os dias perfeitos.
+        """
+        if report.paused:
             return
-        if all(r >= 1 for r in daily_ratios):
-            before = self.player.hp
-            self.player.heal(config.PERFECT_DAY_HP_REGEN)
-            report.healed = self.player.hp - before
+        perfect = bool(daily_ratios) and all(r >= 1 for r in daily_ratios)
+        average = sum(daily_ratios) / len(daily_ratios) if daily_ratios else 1.0
+        amount = round(config.HP_REGEN_PER_DAY * average) + (config.PERFECT_DAY_HP_BONUS if perfect else 0)
+        before = self.player.hp
+        self.player.heal(amount)
+        report.healed = self.player.hp - before
+        if not daily_ratios:
+            return
+        if perfect:
             self.stats.perfect_day_streak += 1
             self.stats.best_perfect_day_streak = max(self.stats.best_perfect_day_streak,
                                                      self.stats.perfect_day_streak)

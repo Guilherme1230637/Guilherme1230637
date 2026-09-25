@@ -182,8 +182,23 @@ bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, bó
 ### 3.5 HP
 ```
 HP máximo = 100 + 5 × (VIT − 10)
-Recuperação: +10 HP por cada dia com todas as dailies a 100 %; poções (Loot) restauram HP.
+Regeneração diária = round(15 × % média dos hábitos diários) + 5 se o dia for perfeito
 ```
+- **Ordem no fecho do dia:** primeiro o dano, depois a regeneração. Se o dano leva o HP a 0, entras na Penalty Zone
+  e nesse dia não regeneras.
+- Sem hábitos diários: regenera os 15 completos. Dias em pausa e dias na Penalty Zone não regeneram.
+- Poções (Loot) restauram +30 HP fora da Penalty Zone.
+
+**Porque mudou (versão 1 → 2):** na versão 1 o HP só recuperava num dia 100 % perfeito (+10). Uma simulação de um ano
+com 6 hábitos diários mostrou que um jogador que cumpre 80 % entrava na Penalty Zone **57 vezes por ano**: cada falha
+parcial tirava HP e os dias perfeitos eram raros. Com a regeneração proporcional, o HP passa a medir a **consistência
+recente**. Resultados com o motor real (`tests/test_balance.py`, média de 5 anos simulados):
+
+| Jogador (cumprimento médio) | Entradas na Penalty Zone por ano |
+|---|---|
+| Casual (65 %) | ~77 |
+| Regular (80 %) | ~3 |
+| Hardcore (95 %) | 0 |
 
 ### 3.6 Hunter Rank (por nível)
 | E | D | C | B | A | S | National Level |

@@ -33,7 +33,8 @@ def rich_state() -> GameState:
         s.record(study, day, 60)
         s.record(water, day, 1.5)
         s.close_day(day, rng)
-    s.catch_up(MONDAY + timedelta(days=11), rng)   # 2 dias sem registos → entra na Penalty Zone
+    s.player.hp = 20                               # pouco HP antes de...
+    s.catch_up(MONDAY + timedelta(days=11), rng)   # ...2 dias sem registos → entra na Penalty Zone
     s.pause(MONDAY + timedelta(days=20), MONDAY + timedelta(days=22))
     s.inventory[items.Item.XP_SCROLL] = 2
     s.player.free_points = 4

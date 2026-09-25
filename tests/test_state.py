@@ -110,7 +110,7 @@ def test_catch_up_processes_every_missed_day():
     add(s, rank="C")                               # falhar custa 12 HP por dia
     reports = s.catch_up(MONDAY + timedelta(days=3), NoLoot())
     assert [r.day for r in reports] == [MONDAY + timedelta(days=i) for i in range(3)]
-    assert s.player.hp == 100 - 3 * 12
+    assert s.player.hp == 100 - 3 * 12             # dia a 0 % → regenera 15 × 0 = 0
     assert s.catch_up(MONDAY + timedelta(days=3), NoLoot()) == []   # nada mais por fechar
 
 
@@ -119,8 +119,36 @@ def test_perfect_day_heals_and_counts():
     h = add(s)
     s.record(h, MONDAY, 1)
     report = s.close_day(MONDAY, NoLoot())
-    assert report.healed == config.PERFECT_DAY_HP_REGEN
+    assert report.healed == config.HP_REGEN_PER_DAY + config.PERFECT_DAY_HP_BONUS   # 15 + 5
     assert s.stats.perfect_day_streak == 1
+
+
+def test_regen_is_proportional_to_daily_completion():
+    s = new_state(hp=50)
+    a, b = add(s, rank="E"), add(s, HabitType.QUANTITY, target=2, rank="E")
+    s.record(a, MONDAY, 1)
+    s.record(b, MONDAY, 1)                          # 50 %  → média (100 % + 50 %) / 2 = 75 %
+    report = s.close_day(MONDAY, NoLoot())
+    assert report.hp_lost == round(5 * 0.5)        # dano primeiro...
+    assert report.healed == round(15 * 0.75)       # ...depois regenera 11
+    assert s.stats.perfect_day_streak == 0
+
+
+def test_no_regen_in_penalty_zone_or_paused_days():
+    s = new_state(hp=5)
+    add(s)                                          # falhar custa 12 → entra na Penalty Zone
+    report = s.close_day(MONDAY, NoLoot())
+    assert report.entered_penalty_zone and report.healed == 0
+    s2 = new_state(hp=50)
+    add(s2)
+    s2.pause(MONDAY, MONDAY)
+    assert s2.close_day(MONDAY, NoLoot()).healed == 0
+
+
+def test_full_regen_without_daily_habits():
+    s = new_state(hp=50)
+    add(s, periodicity=Periodicity.WEEKLY)
+    assert s.close_day(MONDAY, NoLoot()).healed == config.HP_REGEN_PER_DAY
 
 
 # ---------------- Penalty Zone ----------------
