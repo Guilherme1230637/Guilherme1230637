@@ -1,7 +1,7 @@
-# Especificação — App de Hábitos "The System" (estilo Solo Leveling)
+# Especificação — Awaken System (app de hábitos estilo Solo Leveling)
 
 > Documento de requisitos e regras de jogo. Reúne todas as decisões tomadas nas rondas de perguntas.
-> Os valores numéricos marcados com **(proposta)** são sugestões iniciais para equilibrar o jogo e podem ser ajustados.
+> Os valores numéricos foram aprovados e calibrados com `tools/simular_progressao.py`; podem ser ajustados depois de testar a app.
 
 ---
 
@@ -52,7 +52,9 @@ se limite = 0 e valor > 0:   r = 0        (caso especial: evita divisão por zer
 ```
 Exemplo: limite 60 min, gastei 90 min → excesso 30 → `r = 1 − 30/60 = 0,5`.
 
-### 2.4 Rank de dificuldade (E → S) **(proposta)**
+### 2.4 Rank de dificuldade (E → S)
+Quanto mais alto o rank do hábito, mais XP, Gold e atributos dá, e mais HP tira quando falhas.
+
 | Rank | XP base | Gold base | Penalização HP base | Pontos de atributo base | Loot drop |
 |---|---|---|---|---|---|
 | E | 10 | 5 | 5 | 0,2 | 3 % |
@@ -72,7 +74,7 @@ Fazer 75 % dá 75 % do XP e a penalização corresponde apenas aos 25 % em falta
 
 ### 2.6 Streaks (sequências)
 - **Cada hábito tem a sua streak própria** e o seu **limiar mínimo** para contar o dia (por defeito 100 %; ex.: água 80 %, ginásio 100 %).
-- Bónus de streak **(proposta)**: `+1 % de XP por dia de streak, até +30 %`.
+- Bónus de streak: `+1 % de XP por dia de streak, até +30 %`.
 
 ---
 
@@ -101,21 +103,34 @@ Exemplo "Estudar 60 min" (rank C): INT 60 %, WIS 30 %, TEN 10 %
 Ganho de atributo_i = pontos_base(rank) × peso_i × r
 → INT +0,36 · WIS +0,18 · TEN +0,06   (com r = 1)
 ```
-Os atributos guardam casas decimais e a UI mostra o valor inteiro. Além disso, cada **Level Up dá 3 pontos livres** **(proposta)** para distribuíres à mão.
+Os atributos guardam casas decimais e a UI mostra o valor inteiro. Além disso, cada **Level Up dá 3 pontos livres** para distribuíres à mão (mais os extras dos tiers de classe, ver 3.7).
 
 ### 3.4 Nível e curva de XP (exponencial suave)
 ```
-XP necessário para passar do nível n para n+1 = round(100 × n^1.5)
+XP necessário para passar do nível n para n+1 = round(12 × n^1.5)
 ```
 | Nível | XP para o seguinte |
 |---|---|
-| 1 | 100 |
-| 5 | 1 118 |
-| 10 | 3 162 |
-| 25 | 12 500 |
-| 50 | 35 355 |
+| 1 | 12 |
+| 5 | 134 |
+| 10 | 379 |
+| 25 | 1 500 |
+| 50 | 4 243 |
+| 100 | 12 000 |
 
 **Justificação:** os primeiros níveis são rápidos, o que motiva no início, e depois o ritmo abranda sem crescer tão depressa como uma exponencial pura (`a^n`), que tornaria os níveis altos impossíveis.
+
+**Como foi calibrada (`tools/simular_progressao.py`):** a primeira proposta (`100 × n^1.5`) punha um jogador normal
+a demorar ~4 anos até ao nível 40. O simulador corre a progressão dia a dia para 3 perfis e
+permitiu escolher o coeficiente 12:
+
+| Perfil (XP base/dia, cumprimento) | Nível 10 | 1st Job Change (Lv 40) | 2nd Adv. (Lv 50) | 3rd Adv. (Lv 65) | 4th Adv. (Lv 80) | Monarch (Lv 100) |
+|---|---|---|---|---|---|---|
+| Casual (145, 65 %) | 14 dias | 12,5 meses | 20,6 meses | 3,1 anos | 4,9 anos | 8,4 anos |
+| Regular (250, 80 %) | 7 dias | 6,1 meses | 10,2 meses | 18,5 meses | 2,4 anos | 4,0 anos |
+| Hardcore (420, 95 %) | 4 dias | 3,1 meses | 5,2 meses | 9,7 meses | 15,5 meses | 2,1 anos |
+
+Pressupostos do modelo: bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, metade do Gold é gasto na Shop.
 
 ### 3.5 HP
 ```
@@ -123,14 +138,35 @@ HP máximo = 100 + 5 × (VIT − 10)
 Recuperação: +10 HP por cada dia com todas as dailies a 100 %; poções (Loot) restauram HP.
 ```
 
-### 3.6 Hunter Rank (por nível) **(proposta)**
+### 3.6 Hunter Rank (por nível)
 | E | D | C | B | A | S | National Level |
 |---|---|---|---|---|---|---|
 | 1–9 | 10–19 | 20–34 | 35–49 | 50–69 | 70–99 | 100+ |
 
-### 3.7 Job Change (classes) **(proposta)**
-Ao atingir o **nível 30** aparece a *Job Change Quest* (cumprir todas as dailies 7 dias seguidos). Quando a completas, recebes a classe do teu **atributo dominante**:
-STR → Warrior · AGI → Assassin · INT → Mage · WIS → Sage · PER → Ranger · CHA → Commander · VIT → Guardian · END → Knight · TEN → Berserker.
+### 3.7 Job Change e avanços de classe
+**1st Job Change (nível 40):** aparece a *Job Change Quest*: **14 dias seguidos** em que todas as dailies atingem o
+limiar da sua streak. Ao completá-la recebes a classe do teu **atributo dominante** (o mais alto nesse momento).
+A partir daí a classe segue a sua linha. Cada avanço exige **nível mínimo + Gold** e o Gold é **pago** (sai da conta).
+
+| Tier | Requisito | STR | AGI | INT | WIS | PER | CHA | VIT | END | TEN |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Lv 40 + Job Change Quest | Warrior | Assassin | Mage | Sage | Ranger | Commander | Guardian | Knight | Berserker |
+| 2 | Lv 50 + 3 000 Gold | Gladiator | Shadow Blade | Sorcerer | Oracle | Sniper | Tactician | Paladin | Iron Knight | Unyielding |
+| 3 | Lv 65 + 8 000 Gold | Warlord | Phantom | Archmage | Hierophant | Eagle Eye | General | Holy Knight | Juggernaut | Undying |
+| 4 | Lv 80 + 15 000 Gold | Titan | Night Reaper | Arcane Sovereign | Grand Sage | Starseer | Sovereign | Aegis | Colossus | Immortal |
+| 5 | Lv 100 + 30 000 Gold | Monarch of Iron | Monarch of Shadows | Monarch of Knowledge | Monarch of Wisdom | Monarch of Insight | Monarch of Crowns | Monarch of Life | Monarch of Stone | Monarch of Will |
+
+**Recompensas de cada tier** (extra aos 3 pontos livres normais por nível):
+| Tier | Pontos livres extra | Bónus de XP nos hábitos cujo atributo principal é o da classe |
+|---|---|---|
+| 1 | +10 | +5 % |
+| 2 | +15 | +10 % |
+| 3 | +20 | +15 % |
+| 4 | +25 | +20 % |
+| 5 | +30 | +25 % |
+
+**Porque é que o Gold é pago e não apenas "possuído":** funciona como *gold sink*. Obriga a escolher entre gastar
+na Shop (recompensas reais) e poupar para evoluir a classe, e impede a acumulação infinita de Gold.
 
 ### 3.8 Títulos
 Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Penalty Zone; "Unbreakable" = streak de 66 dias). O título ativo aparece na Status Window.
@@ -150,7 +186,7 @@ Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Pe
 ## 5. Skills (geração híbrida)
 
 ### 5.1 Quando aparece uma Skill (motor de regras)
-| Gatilho | Limiares **(proposta)** |
+| Gatilho | Limiares |
 |---|---|
 | Nº de vezes que completaste **um hábito** | 10, 30, 100 |
 | Nº total de missões de **uma categoria/atributo dominante** | 25, 50, 100, 250 |
@@ -163,7 +199,7 @@ Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Pe
 
 ### 5.3 Nível (Proficiency pelo uso)
 - Cada vez que completas um hábito ligado à Skill, ela ganha **proficiência** (`+r`).
-- Lv.1 → Lv.10 (MAX). Proficiência para o nível seguinte: `10 × nível` **(proposta)**.
+- Lv.1 → Lv.10 (MAX). Proficiência para o nível seguinte: `10 × nível`.
 
 ### 5.4 Efeito: bónus de XP
 `+2 % de XP por nível da Skill` nos hábitos ligados. O bónus total das Skills tem um teto de **+50 %** para não desequilibrar.
@@ -178,7 +214,7 @@ Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Pe
 - Bloqueada durante a Penalty Zone.
 
 ### 6.2 Loot (inventário)
-Cada hábito completado tem uma probabilidade de *drop* (tabela 2.4). Itens **(proposta)**:
+Cada hábito completado tem uma probabilidade de *drop* (tabela 2.4). Itens:
 | Item | Efeito |
 |---|---|
 | HP Potion | +30 HP |
