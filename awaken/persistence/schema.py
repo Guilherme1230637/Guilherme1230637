@@ -140,7 +140,17 @@ CREATE TABLE settings (
 );
 """
 
-MIGRATIONS = [SCHEMA_V1]   # MIGRATIONS[i] leva a base de dados da versão i para a i+1
+# v2: hábitos arquivados (em vez de apagados, para não perder histórico nem Skills)
+MIGRATION_V2 = """
+ALTER TABLE habits ADD COLUMN archived INTEGER NOT NULL DEFAULT 0;
+"""
+
+# v3: unidade dos hábitos quantitativos ("L", "pages", ...)
+MIGRATION_V3 = """
+ALTER TABLE habits ADD COLUMN unit TEXT NOT NULL DEFAULT '';
+"""
+
+MIGRATIONS = [SCHEMA_V1, MIGRATION_V2, MIGRATION_V3]   # MIGRATIONS[i] leva a base de dados da versão i para a i+1
 LATEST_VERSION = len(MIGRATIONS)
 
 

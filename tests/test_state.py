@@ -268,3 +268,36 @@ def test_weekly_report_on_sunday():
     assert (weekly.best_habit, weekly.worst_habit) == ("Read", "Run")
     assert weekly.hp_lost == 7 * 12 and weekly.xp_earned > 0
     assert s.week.xp_earned == 0                       # nova semana começa do zero
+
+
+# ---------------- edição e arquivo ----------------
+def test_update_habit_validates_before_changing():
+    s = new_state()
+    h = add(s)
+    s.update_habit(h, name="Push-ups", rank="B")
+    assert (s.habits[h].name, s.habits[h].rank) == ("Push-ups", "B")
+    with pytest.raises(ValueError):
+        s.update_habit(h, attribute_weights={"STR": 0.5})   # não soma 100 %
+    assert s.habits[h].attribute_weights == {"STR": 1.0}    # o original ficou intacto
+    with pytest.raises(ValueError):
+        s.update_habit(h, streak=99)
+
+
+def test_archived_habit_is_ignored_but_history_kept():
+    s = new_state()
+    h = add(s)
+    s.record(h, MONDAY, 1)
+    s.archive_habit(h)
+    report = s.close_day(MONDAY, NoLoot())
+    assert report.ratios == {} and report.hp_lost == 0
+    assert s.value_of(h, MONDAY) == 1
+    assert s.active_habits() == []
+    with pytest.raises(ValueError, match="archived"):
+        s.record(h, MONDAY + timedelta(days=1), 1)
+
+
+def test_weight_templates_are_valid():
+    from awaken.engine.habits import validate_weights
+    from awaken.engine.templates import WEIGHT_TEMPLATES
+    for weights in WEIGHT_TEMPLATES.values():
+        validate_weights(weights)

@@ -103,6 +103,21 @@ class GameState:
         self.next_habit_id += 1
         return habit.id
 
+    def active_habits(self) -> list[Habit]:
+        return [h for h in self.habits.values() if not h.archived]
+
+    def update_habit(self, habit_id: int, **changes) -> None:
+        """Edita um hábito. A validação do Habit volta a correr (ex.: pesos a somar 100 %)."""
+        habit = self.habits[habit_id]
+        forbidden = {"id", "created_on", "streak", "archived"} & changes.keys()
+        if forbidden:
+            raise ValueError(f"Cannot change {sorted(forbidden)} directly.")
+        candidate = Habit(**{**habit.__dict__, **changes})   # valida antes de alterar o original
+        habit.__dict__.update(candidate.__dict__)
+
+    def archive_habit(self, habit_id: int) -> None:
+        self.habits[habit_id].archived = True
+
     def _log_key(self, habit: Habit, day: date) -> tuple[int, date]:
         return habit.id, periods.period_start(day, habit.periodicity)
 
@@ -136,6 +151,8 @@ class GameState:
     def record(self, habit_id: int, day: date, value: float) -> RecordResult:
         """Regista o valor total do período (não um incremento) e atribui a diferença de recompensa."""
         habit = self.habits[habit_id]
+        if habit.archived:
+            raise ValueError("This quest is archived.")
         if periods.period_end(day, habit.periodicity) <= self.last_closed_day:
             raise ValueError("This period is already closed.")
         entry = self.logs.setdefault(self._log_key(habit, day), LogEntry())
@@ -158,7 +175,7 @@ class GameState:
         damage = 0
         daily_ratios: list[float] = []
 
-        for habit in self.habits.values():
+        for habit in self.active_habits():
             if not periods.closes_on(day, habit.periodicity):
                 continue
             period_days = periods.days_of_period(day, habit.periodicity)
@@ -246,7 +263,7 @@ class GameState:
             self.stats.perfect_day_streak = 0
 
     def _close_penalty(self, day: date, damage: int, rng: random.Random, report: DayReport) -> None:
-        ranks = [h.rank for h in self.habits.values()]
+        ranks = [h.rank for h in self.active_habits()]
         tomorrow = day + timedelta(days=1)
         if self.penalty_quest and self.penalty_quest.due <= day:   # não foi cumprida a tempo
             self.penalty_quest = penalty.generate(ranks, tomorrow, rng)

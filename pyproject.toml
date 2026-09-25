@@ -3,6 +3,10 @@ name = "awaken-system"
 version = "0.1.0"
 description = "Gamified habit tracker inspired by Solo Leveling and cultivation manhwas"
 requires-python = ">=3.11"
+dependencies = ["PySide6>=6.6"]
+
+[project.scripts]
+awaken-system = "awaken.app:main"
 
 [project.optional-dependencies]
 dev = ["pytest"]

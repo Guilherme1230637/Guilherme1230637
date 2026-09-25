@@ -364,11 +364,20 @@ awaken/
     schema.py          tabelas SQLite + migrações por versão (PRAGMA user_version)
     repository.py      save/load do GameState completo numa transação; definições
     paths.py           localização do ficheiro (%APPDATA%\AwakenSystem\awaken.db)
-  services/            relógio, lembretes, IA opcional, PIN (a fazer)
-  ui/                  PySide6 (a fazer)
-tests/                 pytest: uma bateria por módulo + test_balance (objetivos de design)
+  services/
+    game_service.py    ponte UI ↔ motor/BD: ações, gravação automática, notificações, meia-noite
+  ui/                  PySide6 — só aspeto; todas as regras vêm do GameService
+    theme.py           cores e folha de estilos "System"
+    widgets.py         Panel, Bar, emblemas de rank, popups [SYSTEM]
+    home.py            Status Window + Quests (cartões por tipo de hábito, cronómetro)
+    habit_dialog.py    criar/editar Quest, com validação dos pesos
+    pages.py           Skills, Inventory, Ranking, Calendar (heatmap), Report, Achievements, Settings
+    main_window.py     janela, navegação, primeiro arranque ("Awakening")
+  app.py               ponto de entrada (python -m awaken)
+tests/                 pytest: uma bateria por módulo + test_balance (objetivos de design) + test_ui (offscreen)
 tools/
   simular_progressao.py  simulador de equilíbrio; lê os números de awaken/engine/config.py
+  capturas.py            gera capturas de todos os ecrãs com um jogo de demonstração
 ```
 **Princípio-chave:** separar **regras do jogo (engine)** da **interface (ui)**. Isto permite testar as fórmulas automaticamente e trocar a UI sem mexer nas regras.
 **Fonte única de verdade:** o simulador importa a curva e os rankings do motor, por isso os dois nunca discordam.
@@ -390,3 +399,14 @@ Distribuição: **PyInstaller** gera um `.exe` para Windows.
 - **Datas** em texto ISO 8601 (`AAAA-MM-DD`), que é o formato recomendado para SQLite e ordena corretamente como texto.
 - **Teste principal:** guardar um jogo complexo e voltar a carregá-lo tem de dar um estado **exatamente igual**, e os dois
   têm de continuar a jogar de forma idêntica.
+
+---
+
+## 14. Interface (PySide6)
+- **Camadas:** `ui` → `services` → `engine` / `persistence`. A interface nunca altera o jogo diretamente: pede ao
+  `GameService`, que aplica as regras, grava e devolve notificações.
+- **Hábitos arquivados** em vez de apagados, para manter o histórico e as Skills (migração v2). **Unidade** dos hábitos
+  quantitativos (migração v3).
+- **Meia-noite:** um temporizador chama `tick()` a cada minuto. Se o dia mudou, o dia anterior é fechado.
+- **Cronómetro:** os hábitos TIMER têm Start/Stop; ao parar, os minutos somam-se ao registo do dia.
+- **Capturas:** `tools/capturas.py` gera todas as páginas em `docs/screenshots/`.

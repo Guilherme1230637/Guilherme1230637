@@ -23,7 +23,7 @@ def rich_state() -> GameState:
     s = GameState(player=Player("Jin", hp=40, gold=900), created_on=MONDAY)
     study = s.add_habit(Habit("Study Japanese", HabitType.TIMER, "C", {"INT": 0.6, "WIS": 0.3, "TEN": 0.1},
                               target=60, tags=["language"], streak_threshold=0.8), MONDAY)
-    water = s.add_habit(Habit("Water", HabitType.QUANTITY, "E", {"VIT": 1.0}, target=2.0), MONDAY)
+    water = s.add_habit(Habit("Water", HabitType.QUANTITY, "E", {"VIT": 1.0}, target=2.0, unit="L"), MONDAY)
     s.add_habit(Habit("Social media", HabitType.LIMIT, "B", {"TEN": 0.7, "PER": 0.3}, target=0), MONDAY)
     s.add_habit(Habit("Gym", HabitType.COUNTER, "A", {"STR": 0.6, "END": 0.4}, target=3,
                       periodicity=Periodicity.WEEKLY), MONDAY)
@@ -135,3 +135,24 @@ def test_default_path_uses_appdata_on_windows(monkeypatch, tmp_path):
     monkeypatch.setenv("APPDATA", str(tmp_path))
     assert paths.default_db_path() == tmp_path / "AwakenSystem" / "awaken.db"
     assert (tmp_path / "AwakenSystem").is_dir()
+
+
+def test_migration_from_v1_keeps_existing_habits(tmp_path):
+    path = tmp_path / "old.db"
+    raw = sqlite3.connect(path)
+    raw.executescript(schema.MIGRATIONS[0] + "PRAGMA user_version = 1;")   # base de dados da versão 1
+    raw.execute("INSERT INTO habits VALUES (1, 'Read', 'check', 'C', 1.0, 'daily', 1.0, 4, '2026-09-28')")
+    raw.execute("INSERT INTO habit_weights VALUES (1, 'WIS', 1.0)")
+    raw.commit()
+    raw.close()
+
+    conn = repository.connect(path)                         # aplica as migrações v2 e v3
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == schema.LATEST_VERSION
+    streak, archived = conn.execute("SELECT streak, archived FROM habits WHERE id = 1").fetchone()
+    assert (streak, archived) == (4, 0)                      # dados antigos intactos, coluna nova com default
+
+
+def test_archived_flag_roundtrip():
+    s = rich_state()
+    s.archive_habit(2)
+    assert roundtrip(s).habits[2].archived

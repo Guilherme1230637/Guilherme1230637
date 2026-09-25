@@ -69,9 +69,10 @@ def _save_player(conn, state: GameState) -> None:
 def _save_habits(conn, state: GameState) -> None:
     for h in state.habits.values():
         conn.execute(
-            "INSERT INTO habits VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO habits (id, name, habit_type, rank, target, periodicity, streak_threshold, streak,"
+            " created_on, archived, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (h.id, h.name, h.habit_type.value, h.rank, h.target, h.periodicity.value, h.streak_threshold,
-             h.streak, _d(h.created_on)),
+             h.streak, _d(h.created_on), int(h.archived), h.unit),
         )
         conn.executemany("INSERT INTO habit_weights VALUES (?, ?, ?)",
                          [(h.id, a, w) for a, w in h.attribute_weights.items()])
@@ -159,10 +160,11 @@ def _load_habits(conn) -> dict[int, Habit]:
     for hid, tag in conn.execute("SELECT habit_id, tag FROM habit_tags ORDER BY habit_id, position"):
         tags.setdefault(hid, []).append(tag)
     habits = {}
-    for hid, name, htype, rank, target, period, threshold, streak, created in conn.execute(
-            "SELECT * FROM habits ORDER BY id"):
+    for hid, name, htype, rank, target, period, threshold, streak, created, archived, unit in conn.execute(
+            "SELECT id, name, habit_type, rank, target, periodicity, streak_threshold, streak, created_on,"
+            " archived, unit FROM habits ORDER BY id"):
         habits[hid] = Habit(name, HabitType(htype), rank, weights[hid], target, Periodicity(period),
-                            threshold, streak, tags.get(hid, []), hid, _p(created))
+                            threshold, streak, tags.get(hid, []), hid, _p(created), bool(archived), unit)
     return habits
 
 

@@ -51,6 +51,8 @@ class Habit:
     tags: list[str] = field(default_factory=list)   # ex.: "language" (usado pelo achievement Polyglot)
     id: int = 0                                     # atribuído pelo GameState / base de dados
     created_on: date | None = None                  # dias antes da criação não contam no 1.º período
+    archived: bool = False                          # arquivado: sai das Quests, mas o histórico fica
+    unit: str = ""                                  # ex.: "L", "pages" (os TIMER são sempre em minutos)
 
     def __post_init__(self):
         if self.rank not in config.HABIT_RANKS:
