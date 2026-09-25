@@ -31,6 +31,13 @@ MARCOS = [
     ("Dark Gold", 55, 2_500),
     ("Legend", 70, 3_500),
     ("Heavenly Fate", 85, 5_000),
+    ("Heavenly Star", 100, 5_000),
+    ("Heavenly Axis", 115, 6_000),
+    ("Dao of Dragon", 130, 6_500),
+    ("Martial Ancestor", 145, 7_500),
+    ("Deity", 160, 8_500),
+    ("Emperor", 175, 9_500),
+    ("Supreme", 190, 11_000),
 ]
 
 # --- Perfis: XP base potencial por dia (soma dos ranks) e taxa média de cumprimento r ---
@@ -86,14 +93,25 @@ def formatar(dias) -> str:
     return f"{dias / 365:.1f} anos"
 
 
+def xp_total(nivel: int) -> int:
+    """XP acumulado necessário para estar no início de `nivel`."""
+    return sum(xp_para_subir(n) for n in range(1, nivel))
+
+
+def subdivisao(nivel: int, xp_no_nivel: float, nivel_ranking: int, nivel_seguinte: int, partes: int) -> int:
+    """Estrela (partes=5) ou estágio (partes=10) = fração do caminho em XP até ao próximo ranking."""
+    inicio, fim = xp_total(nivel_ranking), xp_total(nivel_seguinte)
+    progresso = (xp_total(nivel) + xp_no_nivel - inicio) / (fim - inicio)
+    return min(int(progresso * partes) + 1, partes)
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 4:
         B, C, P = (float(x) for x in sys.argv[1:])
     print(f"Curva: XP(n) = {B} + {C} * n^{P}\n")
-    colunas = [f"{m[0]} (Lv {m[1]}, {m[2]} G)" for m in MARCOS]
-    print("| Perfil | " + " | ".join(colunas) + " |")
-    print("|---" * (len(colunas) + 1) + "|")
-    for nome, p in PERFIS.items():
-        res = simular(p["xp_base"], p["r"])
-        celulas = [formatar(res.get(m[0])) for m in MARCOS]
-        print(f"| {nome} | " + " | ".join(celulas) + " |")
+    resultados = {nome: simular(p["xp_base"], p["r"]) for nome, p in PERFIS.items()}
+    print("| Ranking | Requisito | " + " | ".join(PERFIS) + " |")
+    print("|---" * (len(PERFIS) + 2) + "|")
+    for nome, nivel, custo in MARCOS:
+        celulas = [formatar(resultados[p].get(nome)) for p in PERFIS]
+        print(f"| {nome} | Lv {nivel} + {custo:,} Gold | " + " | ".join(celulas) + " |")

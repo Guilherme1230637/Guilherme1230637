@@ -142,16 +142,26 @@ jogador, com bónus de streak, bónus de Skills e custos em Gold. Curvas testada
 | **`100 + 2 × n^1.5` (escolhida)** | **102 XP** | **50 dias** |
 | `100 + 0,3 × n^2` | 100 XP | 43 dias |
 
-Resultado final, com os custos de Gold da secção 3.7:
+Resultado final, com os custos de Gold da secção 3.7 (tempo até atingir cada ranking):
 
-| Perfil (XP base/dia, cumprimento) | Bronze (Lv 10) | Silver (Lv 25) | Gold (Lv 40) | Dark Gold (Lv 55) | Legend (Lv 70) | Heavenly Fate (Lv 85) |
-|---|---|---|---|---|---|---|
-| Casual (145, 65 %) | 12 dias | 45 dias | 3,4 meses | 6,7 meses | 11,6 meses | 18,6 meses |
-| Regular (250, 80 %) | 6 dias | 22 dias | **50 dias** | 3,2 meses | 5,5 meses | 8,8 meses |
-| Hardcore (420, 95 %) | 3 dias | 12 dias | 26 dias | 49 dias | 2,8 meses | 4,4 meses |
+| Ranking | Casual (145 XP/dia, 65 %) | Regular (250, 80 %) | Hardcore (420, 95 %) |
+|---|---|---|---|
+| Bronze (Lv 10) | 12 dias | 6 dias | 3 dias |
+| Silver (Lv 25) | 45 dias | 22 dias | 12 dias |
+| Gold (Lv 40) | 3,4 meses | **50 dias** | 26 dias |
+| Dark Gold (Lv 55) | 6,7 meses | 3,2 meses | 49 dias |
+| Legend (Lv 70) | 11,6 meses | 5,5 meses | 2,8 meses |
+| Heavenly Fate (Lv 85) | 18,6 meses | 8,8 meses | 4,4 meses |
+| Heavenly Star (Lv 100) | 2,1 anos | 12,0 meses | 6,1 meses |
+| Heavenly Axis (Lv 115) | 2,8 anos | 16,0 meses | 8,0 meses |
+| Dao of Dragon (Lv 130) | 3,6 anos | 20,3 meses | 10,2 meses |
+| Martial Ancestor (Lv 145) | 4,5 anos | 2,1 anos | 12,6 meses |
+| Deity (Lv 160) | 5,4 anos | 2,6 anos | 15,7 meses |
+| Emperor (Lv 175) | 6,5 anos | 3,1 anos | 19,0 meses |
+| Supreme (Lv 190) | 7,8 anos | 3,7 anos | 22,6 meses |
 
-**Efeito do Gold:** até ao ranking Gold, o limite é só o nível. A partir do Dark Gold, o Gold começa a atrasar
-(Regular: Dark Gold +3 dias, Legend +12 dias, Heavenly Fate +32 dias face a "só nível"), ou seja, poupar passa a contar.
+**Efeito do Gold:** até ao ranking Gold o limite é só o nível. Depois, o Gold atrasa o jogador Regular entre
+3 e 48 dias por ranking face a "só nível": poupar conta, mas nunca bloqueia o jogo durante anos.
 
 Pressupostos do modelo: hábitos fixos (na realidade o jogador tende a juntar hábitos de rank mais alto, o que acelera),
 bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, metade do Gold é gasto na Shop.
@@ -172,28 +182,50 @@ Substitui o antigo Job Change e as classes. Os **atributos e as Skills não muda
 
 - Começas **Unranked**. Para subir de ranking precisas de **nível mínimo + Gold**. O Gold é **pago** e sai da conta.
 - **Sem bottleneck:** continuas a subir de nível normalmente, mesmo sem Gold para o próximo ranking.
-- Os rankings sobem **por ordem**, sem saltar nenhum. Se já tens nível para dois, pagas um de cada vez.
-- **Estrelas (1★ a 5★):** dentro de cada ranking ganhas **+1★ a cada 3 níveis**, automaticamente e sem Gold (ex.: "3★ Silver").
-  Servem para mostrar o progresso dentro do ranking.
+- Os rankings sobem **por ordem**, sem saltar nenhum, **a cada 15 níveis**.
+- Popup: `[SYSTEM] Breakthrough successful! You have reached Silver Rank.`
 
-| Ranking | Requisito | 1★ → 5★ (níveis) | Pontos livres extra | Bónus de XP global |
-|---|---|---|---|---|
-| Unranked | — (início) | — | — | — |
-| **Bronze** | Lv 10 + 200 Gold | 10 · 13 · 16 · 19 · 22 | +5 | +2 % |
-| **Silver** | Lv 25 + 600 Gold | 25 · 28 · 31 · 34 · 37 | +10 | +4 % |
-| **Gold** | Lv 40 + 1 500 Gold | 40 · 43 · 46 · 49 · 52 | +15 | +6 % |
-| **Dark Gold** | Lv 55 + 2 500 Gold | 55 · 58 · 61 · 64 · 67 | +20 | +8 % |
-| **Legend** | Lv 70 + 3 500 Gold | 70 · 73 · 76 · 79 · 82 | +25 | +10 % |
-| **Heavenly Fate** | Lv 85 + 5 000 Gold | 85 · 88 · 91 · 94 · 97 | +30 | +12 % |
+| # | Ranking | Requisito | Subdivisão | Pontos livres extra | Bónus de XP global |
+|---|---|---|---|---|---|
+| 0 | Unranked | — (início) | — | — | — |
+| 1 | **Bronze** | Lv 10 + 200 Gold | ★1 → ★5 | +5 | +2 % |
+| 2 | **Silver** | Lv 25 + 600 Gold | ★1 → ★5 | +10 | +4 % |
+| 3 | **Gold** | Lv 40 + 1 500 Gold | ★1 → ★5 | +15 | +6 % |
+| 4 | **Dark Gold** | Lv 55 + 2 500 Gold | ★1 → ★5 | +20 | +8 % |
+| 5 | **Legend** | Lv 70 + 3 500 Gold | ★1 → ★5 | +25 | +10 % |
+| 6 | **Heavenly Fate** | Lv 85 + 5 000 Gold | Stage 1 → 10 | +30 | +12 % |
+| 7 | **Heavenly Star** | Lv 100 + 5 000 Gold | Stage 1 → 10 | +35 | +14 % |
+| 8 | **Heavenly Axis** | Lv 115 + 6 000 Gold | Stage 1 → 10 | +40 | +16 % |
+| 9 | **Dao of Dragon** | Lv 130 + 6 500 Gold | Stage 1 → 10 | +45 | +18 % |
+| 10 | **Martial Ancestor** | Lv 145 + 7 500 Gold | Stage 1 → 10 | +50 | +20 % |
+| 11 | **Deity** | Lv 160 + 8 500 Gold | Stage 1 → 10 | +55 | +22 % |
+| 12 | **Emperor** | Lv 175 + 9 500 Gold | Stage 1 → 10 | +60 | +24 % |
+| 13 | **Supreme** | Lv 190 + 11 000 Gold | Stage 1 → 10 | +65 | +26 % |
 
 - **Pontos livres extra:** somam-se uma vez, no momento do breakthrough, aos 3 pontos normais por nível.
 - **Bónus de XP global:** aplica-se a todos os hábitos e **não é cumulativo** (vale o do ranking atual).
-- Popup: `[SYSTEM] Breakthrough successful! You have reached Silver Rank.`
-- **Estrelas só com o ranking:** se não pagaste a subida, ficas em 5★ do ranking atual (ex.: 5★ Bronze no nível 30).
+
+#### Estrelas e estágios: regra de cálculo
+Dentro de um ranking, a subdivisão mede **a fração do caminho em XP** entre o nível do ranking atual e o nível do
+seguinte (para Supreme, o "seguinte" é o nível 205, mantendo o intervalo de 15):
+```
+progresso   = (XP_total_atual − XP_total(nível do ranking)) / (XP_total(nível do ranking seguinte) − XP_total(nível do ranking))
+subdivisão  = min( floor(progresso × N) + 1 , N )        N = 5 estrelas (Bronze→Legend) · N = 10 estágios (Heavenly Fate→Supreme)
+```
+- **Porque XP e não níveis:** 5 estrelas dividem bem 15 níveis (3 cada), mas 10 estágios não (1,5 níveis cada). Com XP a
+  regra é igual para ambos e cada ★ vale exatamente 20 % do caminho, e cada estágio 10 %.
+- **O `min(…, N)`:** se já tens nível para o ranking seguinte mas não pagaste, ficas no máximo (★5 ou Stage 10) e não
+  passas para um "★6" inexistente.
+- Exemplo real (início de cada nível): **Bronze** ★1 nos níveis 10–14, ★2 em 15–17, ★3 em 18–20, ★4 em 21–22, ★5 em 23–24.
+  As primeiras estrelas levam mais níveis porque os níveis mais baixos custam menos XP.
+  **Heavenly Fate:** Stage 1 nos níveis 85–86, … Stage 10 no nível 99.
 
 **Porque é que o Gold é pago e não apenas "possuído":** funciona como *gold sink*. Obriga a escolher entre gastar
 na Shop (recompensas reais) e poupar para subir de ranking, e impede a acumulação infinita de Gold.
 
+**Como foram definidos os custos:** cada custo ≈ o Gold que um jogador Regular poupa (gastando metade na Shop) entre
+o ranking anterior e esse. A primeira versão, com custos a crescer mais depressa, fazia o Gold atrasar o Supreme
+quase 4 anos. Com esta regra o atraso máximo é ~1,5 meses.
 
 ### 3.8 Títulos
 Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Penalty Zone; "Unbreakable" = streak de 66 dias). O título ativo aparece na Status Window.
@@ -282,7 +314,7 @@ Exemplos: "First Step" (1.ª quest), "Week Warrior" (7 dias a 100 %), "Level 10"
 ---
 
 ## 11. Interface
-- **Ecrã principal:** à esquerda a **Status Window** (nome, nível, Hunter Rank, ranking de cultivação com estrelas, título, barras de HP e XP, 9 atributos, pontos livres). À direita as **Quests** em separadores **Daily / Weekly / Monthly**.
+- **Ecrã principal:** à esquerda a **Status Window** (nome, nível, Hunter Rank, ranking de cultivação com estrela/estágio, título, barras de HP e XP, 9 atributos, pontos livres). À direita as **Quests** em separadores **Daily / Weekly / Monthly**.
 - **Barra lateral:** Status · Quests · Skills · Inventory · Shop · Calendar · Report · Achievements · Settings.
 - Popups animados `[SYSTEM]` para Level Up, Skill nova, Loot e Penalty.
 
