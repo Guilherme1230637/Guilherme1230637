@@ -20,24 +20,21 @@ BONUS_STREAK_MAX = 0.30   # +1 % por dia de streak, até +30 %
 BONUS_SKILLS_MAX = 0.50   # teto do bónus das Skills
 DIAS_SKILLS_MAX = 730     # assumimos que as Skills chegam ao teto em ~2 anos
 
-# --- Fração do Gold ganho que o jogador gasta na Shop ---
-GASTO_SHOP = 0.5
-
 # --- Rankings de cultivação: (nome, nível mínimo, custo em Gold) ---
 MARCOS = [
-    ("Bronze", 10, 200),
-    ("Silver", 25, 600),
-    ("Gold", 40, 1_500),
-    ("Dark Gold", 55, 2_500),
-    ("Legend", 70, 3_500),
-    ("Heavenly Fate", 85, 5_000),
-    ("Heavenly Star", 100, 5_000),
-    ("Heavenly Axis", 115, 6_000),
-    ("Dao of Dragon", 130, 6_500),
-    ("Martial Ancestor", 145, 7_500),
-    ("Deity", 160, 8_500),
-    ("Emperor", 175, 9_500),
-    ("Supreme", 190, 11_000),
+    ("Bronze", 10, 500),
+    ("Silver", 25, 1_500),
+    ("Gold", 40, 3_000),
+    ("Dark Gold", 55, 4_500),
+    ("Legend", 70, 6_000),
+    ("Heavenly Fate", 85, 8_000),
+    ("Heavenly Star", 100, 10_000),
+    ("Heavenly Axis", 115, 11_500),
+    ("Dao of Dragon", 130, 13_000),
+    ("Martial Ancestor", 145, 15_000),
+    ("Deity", 160, 16_500),
+    ("Emperor", 175, 19_000),
+    ("Supreme", 190, 21_500),
 ]
 
 # --- Perfis: XP base potencial por dia (soma dos ranks) e taxa média de cumprimento r ---
@@ -65,7 +62,7 @@ def simular(xp_base: float, r: float, max_dias: int = 3650) -> dict:
     resultado = {}
     for dia in range(1, max_dias + 1):
         xp += xp_base * r * multiplicador(dia, r)
-        gold += (xp_base / 2) * r * (1 - GASTO_SHOP)   # Gold base = XP base / 2, sem bónus
+        gold += (xp_base / 2) * r   # Gold base = XP base / 2, sem bónus; só se gasta em breakthroughs
         while xp >= xp_para_subir(nivel):
             xp -= xp_para_subir(nivel)
             nivel += 1

@@ -148,23 +148,23 @@ Resultado final, com os custos de Gold da secção 3.7 (tempo até atingir cada 
 |---|---|---|---|
 | Bronze (Lv 10) | 12 dias | 6 dias | 3 dias |
 | Silver (Lv 25) | 45 dias | 22 dias | 12 dias |
-| Gold (Lv 40) | 3,4 meses | **50 dias** | 26 dias |
-| Dark Gold (Lv 55) | 6,7 meses | 3,2 meses | 49 dias |
-| Legend (Lv 70) | 11,6 meses | 5,5 meses | 2,8 meses |
-| Heavenly Fate (Lv 85) | 18,6 meses | 8,8 meses | 4,4 meses |
-| Heavenly Star (Lv 100) | 2,1 anos | 12,0 meses | 6,1 meses |
-| Heavenly Axis (Lv 115) | 2,8 anos | 16,0 meses | 8,0 meses |
-| Dao of Dragon (Lv 130) | 3,6 anos | 20,3 meses | 10,2 meses |
-| Martial Ancestor (Lv 145) | 4,5 anos | 2,1 anos | 12,6 meses |
-| Deity (Lv 160) | 5,4 anos | 2,6 anos | 15,7 meses |
-| Emperor (Lv 175) | 6,5 anos | 3,1 anos | 19,0 meses |
-| Supreme (Lv 190) | 7,8 anos | 3,7 anos | 22,6 meses |
+| Gold (Lv 40) | 3,5 meses | **50 dias** | 26 dias |
+| Dark Gold (Lv 55) | 6,6 meses | 3,1 meses | 48 dias |
+| Legend (Lv 70) | 10,8 meses | 5,1 meses | 2,6 meses |
+| Heavenly Fate (Lv 85) | 16,4 meses | 7,7 meses | 3,9 meses |
+| Heavenly Star (Lv 100) | 23,4 meses | 11,0 meses | 5,6 meses |
+| Heavenly Axis (Lv 115) | 2,6 anos | 14,8 meses | 7,6 meses |
+| Dao of Dragon (Lv 130) | 3,4 anos | 19,1 meses | 9,9 meses |
+| Martial Ancestor (Lv 145) | 4,2 anos | 2,0 anos | 12,6 meses |
+| Deity (Lv 160) | 5,2 anos | 2,5 anos | 15,7 meses |
+| Emperor (Lv 175) | 6,3 anos | 3,0 anos | 19,0 meses |
+| Supreme (Lv 190) | 7,6 anos | 3,6 anos | 22,6 meses |
 
-**Efeito do Gold:** até ao ranking Gold o limite é só o nível. Depois, o Gold atrasa o jogador Regular entre
-3 e 48 dias por ranking face a "só nível": poupar conta, mas nunca bloqueia o jogo durante anos.
+**Efeito do Gold (atraso face a "só nível"):** Hardcore 0 dias · Regular 0 a 4 dias · Casual até ~3 meses.
+O Gold trava sobretudo quem cumpre pouco, ou seja, **mede a consistência** (ver 3.7).
 
 Pressupostos do modelo: hábitos fixos (na realidade o jogador tende a juntar hábitos de rank mais alto, o que acelera),
-bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, metade do Gold é gasto na Shop.
+bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, todo o Gold é guardado para breakthroughs.
 
 ### 3.5 HP
 ```
@@ -188,19 +188,19 @@ Substitui o antigo Job Change e as classes. Os **atributos e as Skills não muda
 | # | Ranking | Requisito | Subdivisão | Pontos livres extra | Bónus de XP global |
 |---|---|---|---|---|---|
 | 0 | Unranked | — (início) | — | — | — |
-| 1 | **Bronze** | Lv 10 + 200 Gold | ★1 → ★5 | +5 | +2 % |
-| 2 | **Silver** | Lv 25 + 600 Gold | ★1 → ★5 | +10 | +4 % |
-| 3 | **Gold** | Lv 40 + 1 500 Gold | ★1 → ★5 | +15 | +6 % |
-| 4 | **Dark Gold** | Lv 55 + 2 500 Gold | ★1 → ★5 | +20 | +8 % |
-| 5 | **Legend** | Lv 70 + 3 500 Gold | ★1 → ★5 | +25 | +10 % |
-| 6 | **Heavenly Fate** | Lv 85 + 5 000 Gold | Stage 1 → 10 | +30 | +12 % |
-| 7 | **Heavenly Star** | Lv 100 + 5 000 Gold | Stage 1 → 10 | +35 | +14 % |
-| 8 | **Heavenly Axis** | Lv 115 + 6 000 Gold | Stage 1 → 10 | +40 | +16 % |
-| 9 | **Dao of Dragon** | Lv 130 + 6 500 Gold | Stage 1 → 10 | +45 | +18 % |
-| 10 | **Martial Ancestor** | Lv 145 + 7 500 Gold | Stage 1 → 10 | +50 | +20 % |
-| 11 | **Deity** | Lv 160 + 8 500 Gold | Stage 1 → 10 | +55 | +22 % |
-| 12 | **Emperor** | Lv 175 + 9 500 Gold | Stage 1 → 10 | +60 | +24 % |
-| 13 | **Supreme** | Lv 190 + 11 000 Gold | Stage 1 → 10 | +65 | +26 % |
+| 1 | **Bronze** | Lv 10 + 500 Gold | ★1 → ★5 | +5 | +2 % |
+| 2 | **Silver** | Lv 25 + 1 500 Gold | ★1 → ★5 | +10 | +4 % |
+| 3 | **Gold** | Lv 40 + 3 000 Gold | ★1 → ★5 | +15 | +6 % |
+| 4 | **Dark Gold** | Lv 55 + 4 500 Gold | ★1 → ★5 | +20 | +8 % |
+| 5 | **Legend** | Lv 70 + 6 000 Gold | ★1 → ★5 | +25 | +10 % |
+| 6 | **Heavenly Fate** | Lv 85 + 8 000 Gold | Stage 1 → 10 | +30 | +12 % |
+| 7 | **Heavenly Star** | Lv 100 + 10 000 Gold | Stage 1 → 10 | +35 | +14 % |
+| 8 | **Heavenly Axis** | Lv 115 + 11 500 Gold | Stage 1 → 10 | +40 | +16 % |
+| 9 | **Dao of Dragon** | Lv 130 + 13 000 Gold | Stage 1 → 10 | +45 | +18 % |
+| 10 | **Martial Ancestor** | Lv 145 + 15 000 Gold | Stage 1 → 10 | +50 | +20 % |
+| 11 | **Deity** | Lv 160 + 16 500 Gold | Stage 1 → 10 | +55 | +22 % |
+| 12 | **Emperor** | Lv 175 + 19 000 Gold | Stage 1 → 10 | +60 | +24 % |
+| 13 | **Supreme** | Lv 190 + 21 500 Gold | Stage 1 → 10 | +65 | +26 % |
 
 - **Pontos livres extra:** somam-se uma vez, no momento do breakthrough, aos 3 pontos normais por nível.
 - **Bónus de XP global:** aplica-se a todos os hábitos e **não é cumulativo** (vale o do ranking atual).
@@ -220,12 +220,15 @@ subdivisão  = min( floor(progresso × N) + 1 , N )        N = 5 estrelas (Bronz
   As primeiras estrelas levam mais níveis porque os níveis mais baixos custam menos XP.
   **Heavenly Fate:** Stage 1 nos níveis 85–86, … Stage 10 no nível 99.
 
-**Porque é que o Gold é pago e não apenas "possuído":** funciona como *gold sink*. Obriga a escolher entre gastar
-na Shop (recompensas reais) e poupar para subir de ranking, e impede a acumulação infinita de Gold.
+**Para que serve o Gold:** **só** para breakthroughs de ranking (a Shop foi removida, ver 6.1). É pago, não basta tê-lo.
 
-**Como foram definidos os custos:** cada custo ≈ o Gold que um jogador Regular poupa (gastando metade na Shop) entre
-o ranking anterior e esse. A primeira versão, com custos a crescer mais depressa, fazia o Gold atrasar o Supreme
-quase 4 anos. Com esta regra o atraso máximo é ~1,5 meses.
+**Porque é que o Gold não é redundante com o nível:** o Gold ganha-se **sem bónus** (streaks, Skills e ranking não o
+multiplicam) e perde-se na Penalty Zone (−20 %). Por isso o XP mede o volume total e o Gold mede a **consistência**. Um
+jogador que cumpre pouco atinge o nível mas não junta Gold suficiente, e tem de melhorar a consistência para romper.
+
+**Como foram definidos os custos:** cada custo ≈ o Gold que um jogador Regular ganha entre o ranking anterior e esse
+(simulador). Iterações: (1) custos a crescer depressa faziam o Gold atrasar o Supreme quase 4 anos; (2) com a Shop
+removida o Gold poupado duplicou, e os custos foram duplicados em conformidade.
 
 ### 3.8 Títulos
 Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Penalty Zone; "Unbreakable" = streak de 66 dias). O título ativo aparece na Status Window.
@@ -236,9 +239,9 @@ Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Pe
 1. Falhar hábitos tira HP (fórmula 2.5).
 2. **HP = 0 → Penalty Zone:**
    - perdes **10 % do XP do nível atual** (nunca desces de nível) e **20 % do Gold**;
-   - a **Shop fica bloqueada**;
+   - os **breakthroughs de ranking ficam bloqueados**;
    - é gerada uma **Penalty Quest** obrigatória, um hábito extra de rank igual ou superior ao teu rank médio, com prazo de 24 h.
-3. Completar a Penalty Quest devolve **50 % do HP** e desbloqueia a Shop. Se falhares, é gerada outra.
+3. Completar a Penalty Quest devolve **50 % do HP** e desbloqueia os breakthroughs. Se falhares, é gerada outra.
 
 ---
 
@@ -267,10 +270,10 @@ Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Pe
 
 ## 6. Recompensas
 
-### 6.1 Gold e Shop
-- O Gold ganha-se com os hábitos (2.5).
-- **Shop com recompensas criadas por ti** (ex.: "1 h de videojogos = 300 Gold"). A app sugere preços por rank.
-- Bloqueada durante a Penalty Zone.
+### 6.1 Gold
+- O Gold ganha-se com os hábitos (2.5) e com o item Gold Pouch.
+- Serve **exclusivamente** para pagar os breakthroughs de ranking (3.7).
+- **Shop removida:** com duas utilizações, o Gold perdia peso em ambas; concentrado nos rankings, cada moeda conta.
 
 ### 6.2 Loot (inventário)
 Cada hábito completado tem uma probabilidade de *drop* (tabela 2.4). Itens:
@@ -315,7 +318,7 @@ Exemplos: "First Step" (1.ª quest), "Week Warrior" (7 dias a 100 %), "Level 10"
 
 ## 11. Interface
 - **Ecrã principal:** à esquerda a **Status Window** (nome, nível, Hunter Rank, ranking de cultivação com estrela/estágio, título, barras de HP e XP, 9 atributos, pontos livres). À direita as **Quests** em separadores **Daily / Weekly / Monthly**.
-- **Barra lateral:** Status · Quests · Skills · Inventory · Shop · Calendar · Report · Achievements · Settings.
+- **Barra lateral:** Status · Quests · Skills · Inventory · Ranking · Calendar · Report · Achievements · Settings.
 - Popups animados `[SYSTEM]` para Level Up, Skill nova, Loot e Penalty.
 
 ---
