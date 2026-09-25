@@ -5,14 +5,15 @@ níveis importantes (subidas de ranking de cultivação), para calibrar a curva 
 e os custos em Gold antes de os fixar na app.
 
 Uso:  python tools/simular_progressao.py            (valores da especificação)
-      python tools/simular_progressao.py 120 1.2    (testar outra curva: C e P)
+      python tools/simular_progressao.py 100 3 1.5  (testar outra curva: B, C e P)
 """
 
 import sys
 
-# --- Parâmetros da curva de XP: XP para passar do nível n para n+1 = C * n^P ---
-C = 130
-P = 1.2
+# --- Parâmetros da curva de XP: XP para passar do nível n para n+1 = B + C * n^P ---
+B = 100
+C = 2
+P = 1.5
 
 # --- Multiplicadores de XP (valores da especificação) ---
 BONUS_STREAK_MAX = 0.30   # +1 % por dia de streak, até +30 %
@@ -24,12 +25,12 @@ GASTO_SHOP = 0.5
 
 # --- Rankings de cultivação: (nome, nível mínimo, custo em Gold) ---
 MARCOS = [
-    ("Bronze", 10, 1_000),
-    ("Silver", 25, 4_000),
-    ("Gold", 40, 10_000),
-    ("Dark Gold", 55, 20_000),
-    ("Legend", 70, 35_000),
-    ("Heavenly Fate", 85, 55_000),
+    ("Bronze", 10, 200),
+    ("Silver", 25, 600),
+    ("Gold", 40, 1_500),
+    ("Dark Gold", 55, 2_500),
+    ("Legend", 70, 3_500),
+    ("Heavenly Fate", 85, 5_000),
 ]
 
 # --- Perfis: XP base potencial por dia (soma dos ranks) e taxa média de cumprimento r ---
@@ -41,7 +42,7 @@ PERFIS = {
 
 
 def xp_para_subir(nivel: int) -> int:
-    return round(C * nivel ** P)
+    return round(B + C * nivel ** P)
 
 
 def multiplicador(dia: int, r: float) -> float:
@@ -86,9 +87,9 @@ def formatar(dias) -> str:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        C, P = float(sys.argv[1]), float(sys.argv[2])
-    print(f"Curva: XP(n) = {C} * n^{P}\n")
+    if len(sys.argv) == 4:
+        B, C, P = (float(x) for x in sys.argv[1:])
+    print(f"Curva: XP(n) = {B} + {C} * n^{P}\n")
     colunas = [f"{m[0]} (Lv {m[1]}, {m[2]} G)" for m in MARCOS]
     print("| Perfil | " + " | ".join(colunas) + " |")
     print("|---" * (len(colunas) + 1) + "|")

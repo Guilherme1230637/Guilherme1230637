@@ -105,49 +105,56 @@ Ganho de atributo_i = pontos_base(rank) × peso_i × r
 ```
 Os atributos guardam casas decimais e a UI mostra o valor inteiro. Além disso, cada **Level Up dá 3 pontos livres** para distribuíres à mão (mais os extras de cada subida de ranking, ver 3.7).
 
-### 3.4 Nível e curva de XP (crescimento polinomial suave)
+### 3.4 Nível e curva de XP
 ```
-XP necessário para passar do nível n para n+1 = round(130 × n^1.2)
+XP necessário para passar do nível n para n+1 = round(100 + 2 × n^1.5)
 ```
 | Nível | XP para o seguinte |
 |---|---|
-| 1 | 130 |
-| 5 | 897 |
-| 10 | 2 060 |
-| 25 | 6 187 |
-| 40 | 10 875 |
-| 50 | 14 214 |
-| 85 | 26 869 |
+| 1 | 102 |
+| 5 | 122 |
+| 10 | 163 |
+| 25 | 350 |
+| 40 | 606 |
+| 55 | 916 |
+| 70 | 1 271 |
+| 85 | 1 667 |
+| 100 | 2 100 |
 
-**Objetivo de design:** um jogador Regular deve demorar **1,5 a 2 anos a chegar ao nível 40**.
+**Objetivo de design:** um jogador Regular chega ao **nível 40 em 1,5 a 2 meses**.
 
-**Porque `n^1.2` e não `n^1.5`:** os dois cumprem o nível 40 em ~20 meses (com `45 × n^1.5`), mas o `n^1.5` torna os
-níveis altos desproporcionalmente caros (nível 85 ≈ 9,6 anos contra ≈ 8,4 anos com `n^1.2`). Um expoente
-menor dá uma curva mais "plana" no topo.
-
-**Limitação matemática (importante):** com o nível 40 a demorar ~1,75 anos, **nenhuma curva crescente** consegue
-pôr o nível 85 abaixo de ~7 anos (mesmo a linear `250 × n` dá 7,3 anos), porque o XP total é a soma de
-todos os níveis anteriores. O topo do ranking é, por isso, um objetivo de muito longo prazo, como num MMORPG.
+**Porque tem duas partes:**
+- `100` (**base fixa**): garante que cada nível custa sempre pelo menos ~meio dia de hábitos. Sem ela, os primeiros
+  níveis seriam quase gratuitos (com `2 × n^1.5`, o nível 1 custaria 2 XP e subirias vários níveis no primeiro clique).
+- `2 × n^1.5` (**termo polinomial**): faz o custo crescer com o nível. Nos níveis baixos domina a base (a curva é quase
+  plana); nos níveis altos domina este termo (a curva acelera).
+- Nota de rigor: `n^1.5` é uma função **potência (polinomial)**, não exponencial. Uma exponencial seria `a^n` e cresceria
+  depressa demais para um jogo de longo prazo.
 
 **Como foi calibrada (`tools/simular_progressao.py`):** o simulador corre a progressão dia a dia para 3 perfis de
-jogador. Curvas testadas para o perfil Regular:
+jogador, com bónus de streak, bónus de Skills e custos em Gold. Curvas testadas (perfil Regular, só nível):
 
-| Curva | Nível 40 | Nível 85 |
+| Curva | Nível 1 custa | Nível 40 em |
 |---|---|---|
-| `12 × n^1.5` (1.ª versão) | 6,1 meses | ~2,8 anos |
-| `45 × n^1.5` | 20,1 meses | 9,6 anos |
-| **`130 × n^1.2` (escolhida)** | **21,7 meses** | **8,4 anos** |
-| `250 × n^1.0` (linear) | 21,9 meses | 7,3 anos |
+| `100 × n^1.5` (1.ª versão) | 100 XP | ~4,3 anos |
+| `12 × n^1.5` (2.ª versão) | 12 XP | ~6 meses |
+| `50 + 3 × n^1.5` | 53 XP | 58 dias |
+| **`100 + 2 × n^1.5` (escolhida)** | **102 XP** | **50 dias** |
+| `100 + 0,3 × n^2` | 100 XP | 43 dias |
 
-Resultado final com os custos de Gold da secção 3.7:
+Resultado final, com os custos de Gold da secção 3.7:
 
 | Perfil (XP base/dia, cumprimento) | Bronze (Lv 10) | Silver (Lv 25) | Gold (Lv 40) | Dark Gold (Lv 55) | Legend (Lv 70) | Heavenly Fate (Lv 85) |
 |---|---|---|---|---|---|---|
-| Casual (145, 65 %) | 2,5 meses | 17,2 meses | 3,6 anos | 7,0 anos | > 10 anos | > 10 anos |
-| Regular (250, 80 %) | 37 dias | 8,4 meses | 21,7 meses | 3,4 anos | 5,5 anos | 8,4 anos |
-| Hardcore (420, 95 %) | 19 dias | 4,3 meses | 11,4 meses | 21,4 meses | 2,9 anos | 4,2 anos |
+| Casual (145, 65 %) | 12 dias | 45 dias | 3,4 meses | 6,7 meses | 11,6 meses | 18,6 meses |
+| Regular (250, 80 %) | 6 dias | 22 dias | **50 dias** | 3,2 meses | 5,5 meses | 8,8 meses |
+| Hardcore (420, 95 %) | 3 dias | 12 dias | 26 dias | 49 dias | 2,8 meses | 4,4 meses |
 
-Pressupostos do modelo: hábitos fixos (na realidade o jogador tende a juntar hábitos de rank mais alto, o que acelera), bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, metade do Gold é gasto na Shop. Para o Regular, o Gold nunca atrasa um ranking: o limite é o nível.
+**Efeito do Gold:** até ao ranking Gold, o limite é só o nível. A partir do Dark Gold, o Gold começa a atrasar
+(Regular: Dark Gold +3 dias, Legend +12 dias, Heavenly Fate +32 dias face a "só nível"), ou seja, poupar passa a contar.
+
+Pressupostos do modelo: hábitos fixos (na realidade o jogador tende a juntar hábitos de rank mais alto, o que acelera),
+bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, metade do Gold é gasto na Shop.
 
 ### 3.5 HP
 ```
@@ -172,12 +179,12 @@ Substitui o antigo Job Change e as classes. Os **atributos e as Skills não muda
 | Ranking | Requisito | 1★ → 5★ (níveis) | Pontos livres extra | Bónus de XP global |
 |---|---|---|---|---|
 | Unranked | — (início) | — | — | — |
-| **Bronze** | Lv 10 + 1 000 Gold | 10 · 13 · 16 · 19 · 22 | +5 | +2 % |
-| **Silver** | Lv 25 + 4 000 Gold | 25 · 28 · 31 · 34 · 37 | +10 | +4 % |
-| **Gold** | Lv 40 + 10 000 Gold | 40 · 43 · 46 · 49 · 52 | +15 | +6 % |
-| **Dark Gold** | Lv 55 + 20 000 Gold | 55 · 58 · 61 · 64 · 67 | +20 | +8 % |
-| **Legend** | Lv 70 + 35 000 Gold | 70 · 73 · 76 · 79 · 82 | +25 | +10 % |
-| **Heavenly Fate** | Lv 85 + 55 000 Gold | 85 · 88 · 91 · 94 · 97 | +30 | +12 % |
+| **Bronze** | Lv 10 + 200 Gold | 10 · 13 · 16 · 19 · 22 | +5 | +2 % |
+| **Silver** | Lv 25 + 600 Gold | 25 · 28 · 31 · 34 · 37 | +10 | +4 % |
+| **Gold** | Lv 40 + 1 500 Gold | 40 · 43 · 46 · 49 · 52 | +15 | +6 % |
+| **Dark Gold** | Lv 55 + 2 500 Gold | 55 · 58 · 61 · 64 · 67 | +20 | +8 % |
+| **Legend** | Lv 70 + 3 500 Gold | 70 · 73 · 76 · 79 · 82 | +25 | +10 % |
+| **Heavenly Fate** | Lv 85 + 5 000 Gold | 85 · 88 · 91 · 94 · 97 | +30 | +12 % |
 
 - **Pontos livres extra:** somam-se uma vez, no momento do breakthrough, aos 3 pontos normais por nível.
 - **Bónus de XP global:** aplica-se a todos os hábitos e **não é cumulativo** (vale o do ranking atual).
