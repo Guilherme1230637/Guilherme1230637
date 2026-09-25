@@ -2,6 +2,7 @@
 
 import math
 from dataclasses import dataclass, field
+from datetime import date
 from enum import Enum
 
 from . import config
@@ -47,7 +48,9 @@ class Habit:
     periodicity: Periodicity = Periodicity.DAILY
     streak_threshold: float = 1.0          # % mínima para o dia contar para a streak
     streak: int = 0
-    tags: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)   # ex.: "language" (usado pelo achievement Polyglot)
+    id: int = 0                                     # atribuído pelo GameState / base de dados
+    created_on: date | None = None                  # dias antes da criação não contam no 1.º período
 
     def __post_init__(self):
         if self.rank not in config.HABIT_RANKS:
@@ -60,6 +63,16 @@ class Habit:
         elif self.target <= 0:
             raise ValueError("Target must be positive.")
         validate_weights(self.attribute_weights)
+
+    @property
+    def dominant_attribute(self) -> str:
+        """Atributo com maior peso (define a "categoria" do hábito para as Skills)."""
+        return max(self.attribute_weights, key=self.attribute_weights.get)
+
+    @property
+    def rewarded_on_close(self) -> bool:
+        """Hábitos negativos só se sabem cumpridos no fim do período."""
+        return self.habit_type == HabitType.LIMIT
 
 
 def completion_ratio(habit: Habit, value: float) -> float:
@@ -79,6 +92,19 @@ def completion_ratio(habit: Habit, value: float) -> float:
     return min(value / habit.target, 1.0)
 
 
+PROPORTIONAL_TYPES = (HabitType.QUANTITY, HabitType.COUNTER, HabitType.TIMER)
+
+
+def closing_ratio(habit: Habit, value: float, active_fraction: float) -> float:
+    """% de cumprimento no fecho do período, com o alvo ajustado aos dias ativos (sem pausa, após a criação).
+
+    Ex.: "ginásio 3× por semana" com 2 dias em pausa → alvo 3 × 5/7. Sim/Não e LIMIT não se ajustam.
+    """
+    if habit.habit_type in PROPORTIONAL_TYPES and active_fraction < 1:
+        return min(value / (habit.target * active_fraction), 1.0)
+    return completion_ratio(habit, value)
+
+
 def xp_multiplier(streak_days: int, skills_bonus: float, rank_bonus: float, xp_scroll: bool = False) -> float:
     """(1 + bónus de streak + bónus de Skills + bónus de ranking) × pergaminho de XP."""
     streak = min(streak_days * config.STREAK_BONUS_PER_DAY, config.STREAK_BONUS_MAX)
@@ -94,18 +120,27 @@ class Reward:
     attributes: dict[str, float]
 
 
+def period_totals(habit: Habit, ratio: float, multiplier: float) -> tuple[int, int]:
+    """(XP, Gold) totais que o período vale com esta % de cumprimento. O Gold não leva bónus."""
+    values = config.HABIT_RANKS[habit.rank]
+    return round(values.xp * ratio * multiplier), round(values.gold * ratio)
+
+
 def reward_for_progress(habit: Habit, old_ratio: float, new_ratio: float, multiplier: float) -> Reward:
     """Recompensa por passar de old_ratio para new_ratio (pode ser negativa, se o registo for corrigido para baixo).
 
     Calcula round(total(new)) − round(total(old)) em vez de arredondar cada incremento. Assim, 3 incrementos
     de 1/3 dão exatamente o mesmo que um único registo a 100 % (sem acumular erros de arredondamento).
     """
-    values = config.HABIT_RANKS[habit.rank]
-    xp = round(values.xp * new_ratio * multiplier) - round(values.xp * old_ratio * multiplier)
-    gold = round(values.gold * new_ratio) - round(values.gold * old_ratio)  # o Gold não leva bónus
-    delta = new_ratio - old_ratio
-    attributes = {attr: values.stat_points * weight * delta for attr, weight in habit.attribute_weights.items()}
-    return Reward(xp, gold, attributes)
+    new_xp, new_gold = period_totals(habit, new_ratio, multiplier)
+    old_xp, old_gold = period_totals(habit, old_ratio, multiplier)
+    return Reward(new_xp - old_xp, new_gold - old_gold, attribute_gains(habit, new_ratio - old_ratio))
+
+
+def attribute_gains(habit: Habit, ratio_delta: float) -> dict[str, float]:
+    """Pontos de atributo = pontos base do rank × peso × variação da % de cumprimento."""
+    points = config.HABIT_RANKS[habit.rank].stat_points
+    return {attr: points * weight * ratio_delta for attr, weight in habit.attribute_weights.items()}
 
 
 def hp_penalty(habit: Habit, final_ratio: float) -> int:

@@ -43,6 +43,10 @@ ao fim de 7 dias, e a alternativa Expo Go depende de um PC ligado. Ficou decidid
 - **Daily**: reinicia todos os dias à **00:00**.
 - **Weekly**: alvo de N vezes por semana (segunda a domingo), avaliado domingo às 24:00.
 - **Monthly**: alvo de N vezes por mês, avaliado no último dia do mês às 24:00.
+- **Um só modelo:** cada hábito guarda **um valor por período**. "Ginásio 3× por semana" é um contador cujo período é a semana.
+- **Alvo proporcional:** nos hábitos quantitativos, contador e timer, se parte do período esteve em **pausa** ou foi antes
+  de o hábito ser criado, o alvo ajusta-se aos dias ativos (ex.: 2 dias de pausa → alvo 3 × 5/7).
+  Sim/Não e limites não se ajustam. Um período inteiro em pausa não conta.
 
 ### 2.3 Hábitos negativos (limite diário)
 ```
@@ -81,7 +85,8 @@ Fazer 75 % dá 75 % do XP e a penalização corresponde apenas aos 25 % em falta
 
 ### 2.6 Streaks (sequências)
 - **Cada hábito tem a sua streak própria** e o seu **limiar mínimo** para contar o dia (por defeito 100 %; ex.: água 80 %, ginásio 100 %).
-- Bónus de streak: `+1 % de XP por dia de streak, até +30 %`.
+- Bónus de streak: `+1 % de XP por período de streak, até +30 %` (dias nos diários, semanas nos semanais, meses nos mensais).
+- A streak é atualizada no **fecho do período**.
 
 ---
 
@@ -250,7 +255,9 @@ Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Pe
 2. **HP = 0 → Penalty Zone:**
    - perdes **10 % do XP do nível atual** (nunca desces de nível) e **20 % do Gold**;
    - os **breakthroughs de ranking ficam bloqueados**;
-   - é gerada uma **Penalty Quest** obrigatória, um hábito extra de rank igual ou superior ao teu rank médio, com prazo de 24 h.
+   - é gerada uma **Penalty Quest** obrigatória com prazo até ao fim do dia seguinte. O rank é a **média dos ranks dos
+     teus hábitos, arredondada para cima** (ex.: E e D → D), e a tarefa é sorteada de uma lista por rank
+     (ex.: C → "Do 100 push-ups", "Run 5 km", "Study for 60 minutes").
 3. Completar a Penalty Quest devolve **50 % do HP** e desbloqueia os breakthroughs. Se falhares, é gerada outra.
 
 ---
@@ -266,11 +273,13 @@ Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Pe
 
 ### 5.2 Nome e descrição
 - **Sem IA:** composição a partir de tabelas por atributo (ex.: prefixo "Iron" + núcleo STR "Body" → **"Iron Body"**).
+- Tabelas: 4 prefixos × 4 núcleos por atributo = 16 nomes; esgotados, acrescenta-se um numeral ("Iron Body II"). Nunca há nomes repetidos.
 - **Com IA (opcional):** se houver chave de API nas Settings, o motor envia um resumo (atributo, hábito, gatilho) e a IA devolve nome e descrição temáticos. Se falhar ou estiver sem internet, usa as tabelas.
 - O motor de regras decide sempre **quando** e **que tipo** de Skill aparece. A IA só escreve o texto.
 
 ### 5.3 Nível (Proficiency pelo uso)
-- Cada vez que completas um hábito ligado à Skill, ela ganha **proficiência** (`+r`).
+- Cada vez que um período de um hábito ligado à Skill fecha com `r > 0`, ela ganha **proficiência** (`+r`).
+- Skills de hábito/streak ligam-se a esse hábito; Skills de atributo ligam-se a **todos** os hábitos cujo atributo principal (maior peso) é esse.
 - Lv.1 → Lv.10 (MAX). Proficiência para o nível seguinte: `10 × nível`.
 
 ### 5.4 Efeito: bónus de XP
@@ -286,11 +295,13 @@ Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Pe
 - **Shop removida:** com duas utilizações, o Gold perdia peso em ambas; concentrado nos rankings, cada moeda conta.
 
 ### 6.2 Loot (inventário)
-Cada hábito completado tem uma probabilidade de *drop* (tabela 2.4). Itens:
+Cada período fechado como cumprido (atingiu o limiar da streak) tem uma probabilidade de *drop* (tabela 2.4).
+O sorteio é feito no **fecho**, não no registo: assim não dá para marcar e desmarcar um hábito até sair loot.
+Se há drop, o item sai com os pesos: HP Potion 40 %, XP Scroll 25 %, Streak Shield 20 %, Gold Pouch 15 %. Itens:
 | Item | Efeito |
 |---|---|
-| HP Potion | +30 HP |
-| Streak Shield | Protege a streak de um hábito numa falha |
+| HP Potion | +30 HP (sem efeito na Penalty Zone: aí só a Penalty Quest resolve) |
+| Streak Shield | Protege a streak de um hábito numa falha (gasto **automaticamente**) |
 | XP Scroll | ×2 XP nas próximas 3 quests |
 | Gold Pouch | +50 a 200 Gold |
 
@@ -301,7 +312,7 @@ Exemplos: "First Step" (1.ª quest), "Week Warrior" (7 dias a 100 %), "Level 10"
 
 ## 7. Estatísticas
 - **Calendário por hábito:** cada dia é pintado com intensidade proporcional a `r` (0 % vazio → 100 % cor máxima). Nos quantitativos, 1,5/2 L aparece a 75 %.
-- **Weekly Report `[SYSTEM]`:** gerado na segunda-feira com o resumo da semana anterior: XP/Gold ganho, níveis subidos, taxa de cumprimento por hábito, melhor e pior hábito, streaks, Skills novas ou subidas, HP perdido e passagens pela Penalty Zone.
+- **Weekly Report `[SYSTEM]`:** gerado no fecho de domingo (vês na segunda-feira) com o resumo da semana anterior: XP/Gold ganho, níveis subidos, taxa de cumprimento por hábito, melhor e pior hábito, streaks, Skills novas ou subidas, HP perdido e passagens pela Penalty Zone.
 
 ---
 
@@ -342,11 +353,17 @@ awaken/
     cultivation.py     rankings, breakthroughs, estrelas/estágios
     habits.py          tipos de hábito, % de cumprimento, recompensas, HP, streaks
     player.py          estado da personagem e ações (XP, atributos, HP, Penalty Zone)
+    periods.py         dia / semana / mês
+    skills.py          gatilhos, nomes (tabelas; IA ligável), proficiência
+    items.py           loot e inventário
+    achievements.py    estatísticas, achievements e títulos
+    penalty.py         Penalty Quest
+    report.py          Weekly Report
+    state.py           GameState: registo de progresso, fecho do dia, catch-up, pausa, itens
   persistence/         SQLite (a fazer)
-  services/            relógio/catch-up, lembretes, IA opcional, PIN (a fazer)
+  services/            relógio, lembretes, IA opcional, PIN (a fazer)
   ui/                  PySide6 (a fazer)
-tests/                 pytest: regras (test_leveling, test_cultivation, test_habits, test_player)
-                       e objetivos de design (test_balance)
+tests/                 pytest: uma bateria por módulo + test_balance (objetivos de design)
 tools/
   simular_progressao.py  simulador de equilíbrio; lê os números de awaken/engine/config.py
 ```
