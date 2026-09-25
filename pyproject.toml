@@ -1,0 +1,11 @@
+[project]
+name = "awaken-system"
+version = "0.1.0"
+description = "Gamified habit tracker inspired by Solo Leveling and cultivation manhwas"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

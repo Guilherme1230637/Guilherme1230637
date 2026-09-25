@@ -9,33 +9,18 @@ Uso:  python tools/simular_progressao.py            (valores da especificação)
 """
 
 import sys
+from pathlib import Path
 
-# --- Parâmetros da curva de XP: XP para passar do nível n para n+1 = B + C * n^P ---
-B = 100
-C = 2
-P = 1.5
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # permite importar o pacote awaken
 
-# --- Multiplicadores de XP (valores da especificação) ---
-BONUS_STREAK_MAX = 0.30   # +1 % por dia de streak, até +30 %
-BONUS_SKILLS_MAX = 0.50   # teto do bónus das Skills
-DIAS_SKILLS_MAX = 730     # assumimos que as Skills chegam ao teto em ~2 anos
+from awaken.engine import config, leveling  # noqa: E402  (fonte única dos números do jogo)
 
-# --- Rankings de cultivação: (nome, nível mínimo, custo em Gold) ---
-MARCOS = [
-    ("Bronze", 10, 500),
-    ("Silver", 25, 1_500),
-    ("Gold", 40, 3_000),
-    ("Dark Gold", 55, 4_500),
-    ("Legend", 70, 6_000),
-    ("Heavenly Fate", 85, 8_000),
-    ("Heavenly Star", 100, 10_000),
-    ("Heavenly Axis", 115, 11_500),
-    ("Dao of Dragon", 130, 13_000),
-    ("Martial Ancestor", 145, 15_000),
-    ("Deity", 160, 16_500),
-    ("Emperor", 175, 19_000),
-    ("Supreme", 190, 21_500),
-]
+BONUS_STREAK_MAX = config.STREAK_BONUS_MAX
+BONUS_SKILLS_MAX = config.SKILLS_BONUS_MAX
+DIAS_SKILLS_MAX = 730     # pressuposto do modelo: as Skills chegam ao teto em ~2 anos
+
+# Rankings de cultivação: (nome, nível mínimo, custo em Gold), lidos do motor
+MARCOS = [(r.name, r.min_level, r.gold_cost) for r in config.CULTIVATION_RANKS[1:]]
 
 # --- Perfis: XP base potencial por dia (soma dos ranks) e taxa média de cumprimento r ---
 PERFIS = {
@@ -46,22 +31,23 @@ PERFIS = {
 
 
 def xp_para_subir(nivel: int) -> int:
-    return round(B + C * nivel ** P)
+    return leveling.xp_to_next_level(nivel)
 
 
-def multiplicador(dia: int, r: float) -> float:
-    """Bónus crescem com o tempo: streaks enchem em ~30 dias, Skills em ~2 anos."""
+def multiplicador(dia: int, r: float, bonus_ranking: float) -> float:
+    """Bónus crescem com o tempo: streaks enchem em ~30 dias, Skills em ~2 anos; mais o bónus do ranking atual."""
     streak = BONUS_STREAK_MAX * min(dia / 30, 1) * r   # quem falha mais perde streaks
     skills = BONUS_SKILLS_MAX * min(dia / DIAS_SKILLS_MAX, 1)
-    return 1 + streak + skills
+    return 1 + streak + skills + bonus_ranking
 
 
 def simular(xp_base: float, r: float, max_dias: int = 3650) -> dict:
     nivel, xp, gold = 1, 0.0, 0.0
     marcos_pendentes = list(MARCOS)
     resultado = {}
+    bonus_ranking = 0.0
     for dia in range(1, max_dias + 1):
-        xp += xp_base * r * multiplicador(dia, r)
+        xp += xp_base * r * multiplicador(dia, r, bonus_ranking)
         gold += (xp_base / 2) * r   # Gold base = XP base / 2, sem bónus; só se gasta em breakthroughs
         while xp >= xp_para_subir(nivel):
             xp -= xp_para_subir(nivel)
@@ -72,6 +58,7 @@ def simular(xp_base: float, r: float, max_dias: int = 3650) -> dict:
             if nivel >= nivel_min and gold >= custo:
                 gold -= custo
                 resultado[nome] = dia
+                bonus_ranking = next(rk.xp_bonus for rk in config.CULTIVATION_RANKS if rk.name == nome)
                 marcos_pendentes.pop(0)
             else:
                 break
@@ -90,22 +77,10 @@ def formatar(dias) -> str:
     return f"{dias / 365:.1f} anos"
 
 
-def xp_total(nivel: int) -> int:
-    """XP acumulado necessário para estar no início de `nivel`."""
-    return sum(xp_para_subir(n) for n in range(1, nivel))
-
-
-def subdivisao(nivel: int, xp_no_nivel: float, nivel_ranking: int, nivel_seguinte: int, partes: int) -> int:
-    """Estrela (partes=5) ou estágio (partes=10) = fração do caminho em XP até ao próximo ranking."""
-    inicio, fim = xp_total(nivel_ranking), xp_total(nivel_seguinte)
-    progresso = (xp_total(nivel) + xp_no_nivel - inicio) / (fim - inicio)
-    return min(int(progresso * partes) + 1, partes)
-
-
 if __name__ == "__main__":
-    if len(sys.argv) == 4:
-        B, C, P = (float(x) for x in sys.argv[1:])
-    print(f"Curva: XP(n) = {B} + {C} * n^{P}\n")
+    if len(sys.argv) == 4:  # testar outra curva sem mexer no motor
+        config.XP_CURVE_BASE, config.XP_CURVE_COEF, config.XP_CURVE_EXP = (float(x) for x in sys.argv[1:])
+    print(f"Curva: XP(n) = {config.XP_CURVE_BASE} + {config.XP_CURVE_COEF} * n^{config.XP_CURVE_EXP}\n")
     resultados = {nome: simular(p["xp_base"], p["r"]) for nome, p in PERFIS.items()}
     print("| Ranking | Requisito | " + " | ".join(PERFIS) + " |")
     print("|---" * (len(PERFIS) + 2) + "|")

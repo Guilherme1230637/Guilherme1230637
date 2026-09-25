@@ -72,6 +72,13 @@ HP perdido = HP_base(rank)   × (1 − r)
 ```
 Fazer 75 % dá 75 % do XP e a penalização corresponde apenas aos 25 % em falta.
 
+**Quando é que se recebe:**
+- **XP, Gold e atributos:** no momento do registo, de forma incremental (ir de 50 % para 75 % dá a diferença).
+  Calcula-se `round(total(novo)) − round(total(antigo))`, por isso vários registos parciais dão exatamente o mesmo que
+  um único a 100 %. Corrigir um registo para baixo retira a diferença.
+- **Hábitos negativos (LIMIT):** só no fecho do período, porque só aí se sabe se o limite foi respeitado.
+- **HP perdido e streak:** no fecho do período (meia-noite, domingo ou fim do mês).
+
 ### 2.6 Streaks (sequências)
 - **Cada hábito tem a sua streak própria** e o seu **limiar mínimo** para contar o dia (por defeito 100 %; ex.: água 80 %, ginásio 100 %).
 - Bónus de streak: `+1 % de XP por dia de streak, até +30 %`.
@@ -147,24 +154,25 @@ Resultado final, com os custos de Gold da secção 3.7 (tempo até atingir cada 
 | Ranking | Casual (145 XP/dia, 65 %) | Regular (250, 80 %) | Hardcore (420, 95 %) |
 |---|---|---|---|
 | Bronze (Lv 10) | 12 dias | 6 dias | 3 dias |
-| Silver (Lv 25) | 45 dias | 22 dias | 12 dias |
-| Gold (Lv 40) | 3,5 meses | **50 dias** | 26 dias |
-| Dark Gold (Lv 55) | 6,6 meses | 3,1 meses | 48 dias |
-| Legend (Lv 70) | 10,8 meses | 5,1 meses | 2,6 meses |
-| Heavenly Fate (Lv 85) | 16,4 meses | 7,7 meses | 3,9 meses |
-| Heavenly Star (Lv 100) | 23,4 meses | 11,0 meses | 5,6 meses |
-| Heavenly Axis (Lv 115) | 2,6 anos | 14,8 meses | 7,6 meses |
-| Dao of Dragon (Lv 130) | 3,4 anos | 19,1 meses | 9,9 meses |
-| Martial Ancestor (Lv 145) | 4,2 anos | 2,0 anos | 12,6 meses |
-| Deity (Lv 160) | 5,2 anos | 2,5 anos | 15,7 meses |
-| Emperor (Lv 175) | 6,3 anos | 3,0 anos | 19,0 meses |
-| Supreme (Lv 190) | 7,6 anos | 3,6 anos | 22,6 meses |
+| Silver (Lv 25) | 44 dias | 22 dias | 12 dias |
+| Gold (Lv 40) | 3,4 meses | **49 dias** | 26 dias |
+| Dark Gold (Lv 55) | 6,2 meses | 3,0 meses | 46 dias |
+| Legend (Lv 70) | 10,1 meses | 4,9 meses | 2,5 meses |
+| Heavenly Fate (Lv 85) | 15,0 meses | 7,3 meses | 3,7 meses |
+| Heavenly Star (Lv 100) | 21,0 meses | 10,3 meses | 5,3 meses |
+| Heavenly Axis (Lv 115) | 2,4 anos | 13,8 meses | 7,1 meses |
+| Dao of Dragon (Lv 130) | 3,1 anos | 17,8 meses | 9,2 meses |
+| Martial Ancestor (Lv 145) | 3,8 anos | 22,2 meses | 11,7 meses |
+| Deity (Lv 160) | 4,7 anos | 2,3 anos | 14,4 meses |
+| Emperor (Lv 175) | 5,6 anos | 2,7 anos | 17,4 meses |
+| Supreme (Lv 190) | 6,7 anos | 3,2 anos | 20,6 meses |
 
-**Efeito do Gold (atraso face a "só nível"):** Hardcore 0 dias · Regular 0 a 4 dias · Casual até ~3 meses.
-O Gold trava sobretudo quem cumpre pouco, ou seja, **mede a consistência** (ver 3.7).
+**Efeito do Gold (atraso face a "só nível"):** Hardcore 0 dias · Regular 0 dias · Casual até ~45 dias.
+O Gold trava apenas quem cumpre pouco, ou seja, **mede a consistência** (ver 3.7).
+Estes objetivos estão protegidos por testes automáticos (`tests/test_balance.py`).
 
 Pressupostos do modelo: hábitos fixos (na realidade o jogador tende a juntar hábitos de rank mais alto, o que acelera),
-bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, todo o Gold é guardado para breakthroughs.
+bónus de streak enche em 30 dias, bónus de Skills chega ao teto em 2 anos, bónus de XP do ranking atual incluído, todo o Gold é guardado para breakthroughs.
 
 ### 3.5 HP
 ```
@@ -190,17 +198,17 @@ Substitui o antigo Job Change e as classes. Os **atributos e as Skills não muda
 | 0 | Unranked | — (início) | — | — | — |
 | 1 | **Bronze** | Lv 10 + 500 Gold | ★1 → ★5 | +5 | +2 % |
 | 2 | **Silver** | Lv 25 + 1 500 Gold | ★1 → ★5 | +10 | +4 % |
-| 3 | **Gold** | Lv 40 + 3 000 Gold | ★1 → ★5 | +15 | +6 % |
-| 4 | **Dark Gold** | Lv 55 + 4 500 Gold | ★1 → ★5 | +20 | +8 % |
-| 5 | **Legend** | Lv 70 + 6 000 Gold | ★1 → ★5 | +25 | +10 % |
-| 6 | **Heavenly Fate** | Lv 85 + 8 000 Gold | Stage 1 → 10 | +30 | +12 % |
-| 7 | **Heavenly Star** | Lv 100 + 10 000 Gold | Stage 1 → 10 | +35 | +14 % |
-| 8 | **Heavenly Axis** | Lv 115 + 11 500 Gold | Stage 1 → 10 | +40 | +16 % |
-| 9 | **Dao of Dragon** | Lv 130 + 13 000 Gold | Stage 1 → 10 | +45 | +18 % |
-| 10 | **Martial Ancestor** | Lv 145 + 15 000 Gold | Stage 1 → 10 | +50 | +20 % |
-| 11 | **Deity** | Lv 160 + 16 500 Gold | Stage 1 → 10 | +55 | +22 % |
-| 12 | **Emperor** | Lv 175 + 19 000 Gold | Stage 1 → 10 | +60 | +24 % |
-| 13 | **Supreme** | Lv 190 + 21 500 Gold | Stage 1 → 10 | +65 | +26 % |
+| 3 | **Gold** | Lv 40 + 2 500 Gold | ★1 → ★5 | +15 | +6 % |
+| 4 | **Dark Gold** | Lv 55 + 4 000 Gold | ★1 → ★5 | +20 | +8 % |
+| 5 | **Legend** | Lv 70 + 5 500 Gold | ★1 → ★5 | +25 | +10 % |
+| 6 | **Heavenly Fate** | Lv 85 + 7 000 Gold | Stage 1 → 10 | +30 | +12 % |
+| 7 | **Heavenly Star** | Lv 100 + 9 000 Gold | Stage 1 → 10 | +35 | +14 % |
+| 8 | **Heavenly Axis** | Lv 115 + 10 500 Gold | Stage 1 → 10 | +40 | +16 % |
+| 9 | **Dao of Dragon** | Lv 130 + 12 000 Gold | Stage 1 → 10 | +45 | +18 % |
+| 10 | **Martial Ancestor** | Lv 145 + 13 500 Gold | Stage 1 → 10 | +50 | +20 % |
+| 11 | **Deity** | Lv 160 + 14 500 Gold | Stage 1 → 10 | +55 | +22 % |
+| 12 | **Emperor** | Lv 175 + 16 500 Gold | Stage 1 → 10 | +60 | +24 % |
+| 13 | **Supreme** | Lv 190 + 18 500 Gold | Stage 1 → 10 | +65 | +26 % |
 
 - **Pontos livres extra:** somam-se uma vez, no momento do breakthrough, aos 3 pontos normais por nível.
 - **Bónus de XP global:** aplica-se a todos os hábitos e **não é cumulativo** (vale o do ranking atual).
@@ -228,7 +236,9 @@ jogador que cumpre pouco atinge o nível mas não junta Gold suficiente, e tem d
 
 **Como foram definidos os custos:** cada custo ≈ o Gold que um jogador Regular ganha entre o ranking anterior e esse
 (simulador). Iterações: (1) custos a crescer depressa faziam o Gold atrasar o Supreme quase 4 anos; (2) com a Shop
-removida o Gold poupado duplicou, e os custos foram duplicados em conformidade.
+removida o Gold poupado duplicou, e os custos foram duplicados em conformidade; (3) ao ligar o simulador ao motor,
+verificou-se que o simulador ignorava o bónus de XP dos rankings. Com o bónus incluído o XP chega mais cedo e o Gold passava
+a atrasar o Regular até ~4 meses, por isso os custos foram recalculados com a mesma regra.
 
 ### 3.8 Títulos
 Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Penalty Zone; "Unbreakable" = streak de 66 dias). O título ativo aparece na Status Window.
@@ -323,15 +333,23 @@ Exemplos: "First Step" (1.ª quest), "Week Warrior" (7 dias a 100 %), "Level 10"
 
 ---
 
-## 12. Arquitetura (resumo)
+## 12. Arquitetura
 ```
-app/
-  models/        dataclasses: Player, Habit, HabitLog, Skill, Item, ...
-  engine/        lógica pura do jogo (XP, níveis, HP, streaks, skills, loot) — sem UI, 100 % testável
-  persistence/   SQLite (repositórios)
-  services/      relógio/catch-up, lembretes, IA opcional, PIN
-  ui/            PySide6 (janelas, widgets, tema "System")
-tests/           pytest para o engine
+awaken/
+  engine/              lógica pura do jogo — sem UI nem base de dados, 100 % testável
+    config.py          TODOS os números de equilíbrio (fonte única)
+    leveling.py        curva de XP, Level Up, Hunter Rank
+    cultivation.py     rankings, breakthroughs, estrelas/estágios
+    habits.py          tipos de hábito, % de cumprimento, recompensas, HP, streaks
+    player.py          estado da personagem e ações (XP, atributos, HP, Penalty Zone)
+  persistence/         SQLite (a fazer)
+  services/            relógio/catch-up, lembretes, IA opcional, PIN (a fazer)
+  ui/                  PySide6 (a fazer)
+tests/                 pytest: regras (test_leveling, test_cultivation, test_habits, test_player)
+                       e objetivos de design (test_balance)
+tools/
+  simular_progressao.py  simulador de equilíbrio; lê os números de awaken/engine/config.py
 ```
 **Princípio-chave:** separar **regras do jogo (engine)** da **interface (ui)**. Isto permite testar as fórmulas automaticamente e trocar a UI sem mexer nas regras.
+**Fonte única de verdade:** o simulador importa a curva e os rankings do motor, por isso os dois nunca discordam.
 Distribuição: **PyInstaller** gera um `.exe` para Windows.
