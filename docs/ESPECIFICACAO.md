@@ -360,7 +360,10 @@ awaken/
     penalty.py         Penalty Quest
     report.py          Weekly Report
     state.py           GameState: registo de progresso, fecho do dia, catch-up, pausa, itens
-  persistence/         SQLite (a fazer)
+  persistence/
+    schema.py          tabelas SQLite + migrações por versão (PRAGMA user_version)
+    repository.py      save/load do GameState completo numa transação; definições
+    paths.py           localização do ficheiro (%APPDATA%\AwakenSystem\awaken.db)
   services/            relógio, lembretes, IA opcional, PIN (a fazer)
   ui/                  PySide6 (a fazer)
 tests/                 pytest: uma bateria por módulo + test_balance (objetivos de design)
@@ -370,3 +373,20 @@ tools/
 **Princípio-chave:** separar **regras do jogo (engine)** da **interface (ui)**. Isto permite testar as fórmulas automaticamente e trocar a UI sem mexer nas regras.
 **Fonte única de verdade:** o simulador importa a curva e os rankings do motor, por isso os dois nunca discordam.
 Distribuição: **PyInstaller** gera um `.exe` para Windows.
+
+---
+
+## 13. Persistência (SQLite)
+- **Ficheiro:** `%APPDATA%\AwakenSystem\awaken.db`, na pasta de dados do utilizador do Windows.
+- **Esquema normalizado:** uma tabela por conceito (player, attributes, habits, habit_weights, habit_tags, logs, skills,
+  inventory, stats, achievements, titles, penalty_quest, paused_days, settings…), com **chaves estrangeiras**
+  (`ON DELETE CASCADE`) e restrições `CHECK` (ex.: quantidade no inventário ≥ 0; uma só personagem).
+- **Exceção justificada:** o resumo da semana em curso fica em JSON (`week_state`), porque é temporário e reinicia todos os domingos.
+- **Gravação atómica:** cada gravação reescreve o estado inteiro **numa só transação**. Se algo falhar, é feito
+  *rollback* e o último estado bom mantém-se intacto (há um teste que o prova). Com poucos milhares de registos por ano,
+  reescrever tudo demora milissegundos, e o código fica muito mais simples do que atualizar linha a linha.
+- **Migrações:** `PRAGMA user_version` guarda a versão do esquema. Ao abrir, aplicam-se as migrações em falta, por ordem.
+  Uma base de dados de uma versão **mais nova** da app é recusada, para não a corromper.
+- **Datas** em texto ISO 8601 (`AAAA-MM-DD`), que é o formato recomendado para SQLite e ordena corretamente como texto.
+- **Teste principal:** guardar um jogo complexo e voltar a carregá-lo tem de dar um estado **exatamente igual**, e os dois
+  têm de continuar a jogar de forma idêntica.
