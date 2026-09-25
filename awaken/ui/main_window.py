@@ -1,22 +1,29 @@
 """Janela principal: barra lateral + páginas, popups [SYSTEM] e verificação periódica da meia-noite."""
 
+from datetime import datetime
+
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
+    QApplication,
     QDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
     QMainWindow,
+    QMenu,
     QPushButton,
     QStackedWidget,
+    QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
 )
 
 from ..services.game_service import GameService, Notification
+from ..services.security import PinGate
 from . import theme
 from .home import HomePage
+from .icon import make_icon
 from .pages import (
     AchievementsPage,
     CalendarPage,
@@ -28,7 +35,8 @@ from .pages import (
 )
 from .widgets import Panel, SystemPopup
 
-TICK_MS = 60_000   # de minuto a minuto: se o dia mudou, fecha o dia anterior
+TICK_MS = 60_000       # de minuto a minuto: se o dia mudou, fecha o dia anterior
+REMINDER_MS = 30_000   # de 30 em 30 segundos: há lembretes para mostrar?
 
 
 class MainWindow(QMainWindow):
@@ -69,6 +77,57 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(lambda: self.changed(self.service.tick()))
         self.timer.start(TICK_MS)
         self.sidebar.setCurrentRow(0)
+        self.setWindowIcon(make_icon())
+        self._setup_tray()
+
+    # ---------- bandeja do sistema e lembretes ----------
+    def _setup_tray(self) -> None:
+        self.tray = None
+        self.last_reminder_check = datetime.now()
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            return
+        self.tray = QSystemTrayIcon(make_icon(), self)
+        self.tray.setToolTip("Awaken System")
+        menu = QMenu()
+        menu.addAction("Open", self.bring_to_front)
+        menu.addAction("Quit", self.quit)
+        self.tray.setContextMenu(menu)
+        self.tray.activated.connect(lambda reason: reason == QSystemTrayIcon.Trigger and self.bring_to_front())
+        self.tray.show()
+        self.reminder_timer = QTimer(self)
+        self.reminder_timer.timeout.connect(self.check_reminders)
+        self.reminder_timer.start(REMINDER_MS)
+
+    def check_reminders(self) -> None:
+        now = datetime.now()
+        due = self.service.due_reminders(self.last_reminder_check, now)
+        self.last_reminder_check = now
+        if self.tray and due:
+            names = ", ".join(h.name for h in due)
+            self.tray.showMessage("[SYSTEM] Quest reminder", f"{names} — waiting for you, Player.",
+                                  QSystemTrayIcon.Information, 10_000)
+
+    def bring_to_front(self) -> None:
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+        self.changed()
+
+    def quit(self) -> None:
+        self._quitting = True
+        QApplication.quit()
+
+    def closeEvent(self, event) -> None:
+        """Fechar a janela esconde-a junto ao relógio (os lembretes continuam), se essa opção estiver ligada."""
+        if self.tray and self.service.minimize_to_tray and not getattr(self, "_quitting", False):
+            event.ignore()
+            self.hide()
+            if not getattr(self, "_told_about_tray", False):
+                self.tray.showMessage("Awaken System", "Still running next to the clock. Right-click → Quit to exit.")
+                self._told_about_tray = True
+            return
+        event.accept()
+        QApplication.quit()
 
     def _show(self, index: int) -> None:
         self.stack.setCurrentIndex(index)
@@ -121,3 +180,48 @@ class AwakeningDialog(QDialog):
             self.error.setText(str(e))
             return
         self.accept()
+
+
+class PinDialog(QDialog):
+    """Pedido de PIN ao abrir a app (5 erros → 30 s de espera)."""
+
+    def __init__(self, gate: PinGate):
+        super().__init__()
+        self.gate = gate
+        self.setWindowTitle("Awaken System")
+        panel = Panel("Locked")
+        self.pin = QLineEdit()
+        self.pin.setEchoMode(QLineEdit.Password)
+        self.pin.setMaxLength(6)
+        self.pin.setPlaceholderText("PIN")
+        self.pin.returnPressed.connect(self._try)
+        self.message = QLabel()
+        self.message.setStyleSheet(f"color: {theme.DANGER};")
+        unlock = QPushButton("Unlock")
+        unlock.setObjectName("Primary")
+        unlock.clicked.connect(self._try)
+        for w in (QLabel("Enter your PIN, Player."), self.pin, self.message, unlock):
+            panel.body.addWidget(w)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.addWidget(panel)
+        self.setMinimumWidth(360)
+        self.countdown = QTimer(self)
+        self.countdown.timeout.connect(self._update_lock)
+
+    def _try(self) -> None:
+        if self.gate.try_pin(self.pin.text()):
+            self.accept()
+            return
+        self.pin.clear()
+        self.message.setText("Wrong PIN.")
+        self._update_lock()
+
+    def _update_lock(self) -> None:
+        locked = self.gate.seconds_locked()
+        self.pin.setEnabled(not locked)
+        if locked:
+            self.message.setText(f"Too many attempts. Try again in {locked} s.")
+            self.countdown.start(1000)
+        else:
+            self.countdown.stop()

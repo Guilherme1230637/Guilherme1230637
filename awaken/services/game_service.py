@@ -22,8 +22,13 @@ from ..engine.report import WeeklyReport
 from ..engine.skills import SkillNamer, TableSkillNamer
 from ..engine.state import DayReport, GameState
 from ..persistence import repository
+from . import reminders, security
+from .ai_namer import ClaudeSkillNamer
 
 LAST_REPORT_KEY = "last_weekly_report"
+PIN_KEY = "pin_hash"
+AI_NAMES_KEY = "ai_skill_names"
+TRAY_KEY = "minimize_to_tray"
 
 
 class Clock(Protocol):
@@ -60,7 +65,7 @@ class GameService:
         self.conn = conn
         self.clock = clock or SystemClock()
         self.rng = rng or random.Random()
-        self.namer_factory = namer_factory or TableSkillNamer
+        self.namer_factory = namer_factory      # None → decide pelas definições (tabelas ou IA)
         self.state: GameState | None = None
 
     @classmethod
@@ -90,7 +95,7 @@ class GameService:
 
     def tick(self) -> list[Notification]:
         """Chamado ao abrir e periodicamente (ex.: a cada minuto): trata a passagem da meia-noite."""
-        reports = self.state.catch_up(self.today, self.rng, self.namer_factory(self.rng))
+        reports = self.state.catch_up(self.today, self.rng, self._namer())
         if not reports:
             return []
         self._save()
@@ -101,6 +106,53 @@ class GameService:
 
     def _save(self) -> None:
         repository.save(self.conn, self.state)
+
+    def _namer(self) -> SkillNamer:
+        if self.namer_factory:
+            return self.namer_factory(self.rng)
+        return ClaudeSkillNamer(self.rng) if self.ai_skill_names else TableSkillNamer(self.rng)
+
+    # ---------------- definições: PIN, IA, bandeja ----------------
+    def _flag(self, key: str, default: bool) -> bool:
+        return repository.get_setting(self.conn, key, "1" if default else "0") == "1"
+
+    @property
+    def has_pin(self) -> bool:
+        return repository.get_setting(self.conn, PIN_KEY) is not None
+
+    def pin_gate(self) -> security.PinGate:
+        return security.PinGate(repository.get_setting(self.conn, PIN_KEY))
+
+    def set_pin(self, new_pin: str, current_pin: str | None = None) -> None:
+        self._check_current_pin(current_pin)
+        repository.set_setting(self.conn, PIN_KEY, security.hash_pin(new_pin))
+
+    def remove_pin(self, current_pin: str) -> None:
+        self._check_current_pin(current_pin)
+        with self.conn:
+            self.conn.execute("DELETE FROM settings WHERE key = ?", (PIN_KEY,))
+
+    def _check_current_pin(self, current_pin: str | None) -> None:
+        stored = repository.get_setting(self.conn, PIN_KEY)
+        if stored and not security.verify_pin(current_pin or "", stored):
+            raise ValueError("The current PIN is wrong.")
+
+    @property
+    def ai_skill_names(self) -> bool:
+        return self._flag(AI_NAMES_KEY, False)
+
+    def set_ai_skill_names(self, enabled: bool) -> None:
+        repository.set_setting(self.conn, AI_NAMES_KEY, "1" if enabled else "0")
+
+    @property
+    def minimize_to_tray(self) -> bool:
+        return self._flag(TRAY_KEY, True)
+
+    def set_minimize_to_tray(self, enabled: bool) -> None:
+        repository.set_setting(self.conn, TRAY_KEY, "1" if enabled else "0")
+
+    def due_reminders(self, last_check, now) -> list[Habit]:
+        return reminders.due_reminders(self.state.active_habits(), last_check, now, self.ratio)
 
     # ---------------- hábitos ----------------
     def add_habit(self, habit: Habit) -> int:

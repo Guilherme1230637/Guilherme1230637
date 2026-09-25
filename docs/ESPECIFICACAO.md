@@ -289,7 +289,12 @@ Desbloqueados por conquistas (ex.: "The One Who Overcame Adversity" = sair da Pe
 ### 5.2 Nome e descrição
 - **Sem IA:** composição a partir de tabelas por atributo (ex.: prefixo "Iron" + núcleo STR "Body" → **"Iron Body"**).
 - Tabelas: 4 prefixos × 4 núcleos por atributo = 16 nomes; esgotados, acrescenta-se um numeral ("Iron Body II"). Nunca há nomes repetidos.
-- **Com IA (opcional):** se houver chave de API nas Settings, o motor envia um resumo (atributo, hábito, gatilho) e a IA devolve nome e descrição temáticos. Se falhar ou estiver sem internet, usa as tabelas.
+- **Com IA (opcional):** ligada nas Settings e com chave de API, a app pede à API do Claude (`claude-opus-5`, esforço
+  `low`) um nome e uma descrição. A resposta vem obrigatoriamente em JSON validado por esquema (*structured outputs*),
+  com *fallback* no servidor se o modelo recusar. Só são enviados o nome do hábito, o atributo e o marco atingido.
+- **Tudo cai para as tabelas** se faltar o SDK, a chave ou a internet, se houver recusa, se o JSON for inválido, se o
+  nome for repetido ou se tiver mais de 40 caracteres. Depois de uma falha de ligação, não insiste nesse fecho de dia.
+- A parte mecânica da descrição ("+2% XP per level…") é sempre escrita pela app, para ser exata.
 - O motor de regras decide sempre **quando** e **que tipo** de Skill aparece. A IA só escreve o texto.
 
 ### 5.3 Nível (Proficiency pelo uso)
@@ -339,15 +344,22 @@ Exemplos: "First Step" (1.ª quest), "Week Warrior" (7 dias a 100 %), "Level 10"
 ---
 
 ## 9. Segurança
-- **PIN numérico de 4 a 6 dígitos**, guardado como *hash* **PBKDF2-HMAC-SHA256 com salt aleatório** (nunca em texto simples).
-- 5 tentativas erradas → espera de 30 s.
+- **PIN numérico de 4 a 6 dígitos**, guardado como *hash* **PBKDF2-HMAC-SHA256 com salt aleatório de 16 bytes e
+  200 000 iterações** (nunca em texto simples), no formato `pbkdf2_sha256$iterações$salt$hash`.
+- Verificação com **comparação em tempo constante** (`hmac.compare_digest`), para não revelar pelo tempo de resposta
+  quantos bytes estavam certos.
+- 5 tentativas erradas → espera de 30 s. Mudar ou remover o PIN exige o PIN atual.
 - **Limitação assumida:** o PIN protege o acesso à app, mas **não cifra** o ficheiro da base de dados.
 - A chave de API da IA (se usada) fica no **Windows Credential Manager** (biblioteca `keyring`), não na base de dados.
+  Alternativa: variável de ambiente `ANTHROPIC_API_KEY`. Qualquer falha do cofre é ignorada (a app funciona sem IA).
 
 ---
 
 ## 10. Notificações
-- **Lembretes de horário** por hábito (ex.: "[SYSTEM] Daily Quest has arrived" às 08:00).
+- **Lembretes de horário** por hábito (ex.: "[SYSTEM] Quest reminder — Study Japanese" às 08:00): disparam uma vez por
+  dia, à hora marcada, e **só se o hábito ainda não estiver cumprido** (migração v4: coluna `reminder`).
+- Verificação a cada 30 s do intervalo `]última verificação, agora]`, por isso abrir a app às 10:00 não dispara os
+  lembretes antigos das 08:00.
 - Nota técnica: os lembretes só disparam com a app a correr. Ao fechar a janela, a app minimiza para o ícone junto ao relógio do Windows.
 
 ---
@@ -425,3 +437,14 @@ Distribuição: **PyInstaller** gera um `.exe` para Windows.
 - **Meia-noite:** um temporizador chama `tick()` a cada minuto. Se o dia mudou, o dia anterior é fechado.
 - **Cronómetro:** os hábitos TIMER têm Start/Stop; ao parar, os minutos somam-se ao registo do dia.
 - **Capturas:** `tools/capturas.py` gera todas as páginas em `docs/screenshots/`.
+
+---
+
+## 15. Distribuição
+- `tools/build_exe.py` cria `dist/AwakenSystem.exe` com **PyInstaller** (um ficheiro, sem consola, com ícone desenhado
+  em código e convertido para `.ico`).
+- **O PyInstaller só gera executáveis para o sistema onde corre.** Por isso o `.exe` é criado pelo **GitHub Actions**
+  (`.github/workflows/build.yml`) num Windows real: em cada push corre **todos os testes** e só depois compila. O
+  `.exe` fica disponível como *artifact* da execução.
+- A configuração foi validada neste ambiente com um build Linux equivalente: o executável arranca e cria a base de
+  dados no sítio certo.

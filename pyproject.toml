@@ -10,6 +10,10 @@ awaken-system = "awaken.app:main"
 
 [project.optional-dependencies]
 dev = ["pytest"]
+ai = ["anthropic>=1.8", "keyring"]   # nomes de Skills por IA (opcional)
+
+[tool.setuptools.packages.find]
+include = ["awaken*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

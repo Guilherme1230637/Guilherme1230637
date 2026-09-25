@@ -8,7 +8,7 @@ ou (se algo falhar) não grava nada e o estado anterior mantém-se intacto.
 import json
 import sqlite3
 from dataclasses import asdict
-from datetime import date
+from datetime import date, time
 from pathlib import Path
 
 from ..engine.achievements import Stats
@@ -70,9 +70,10 @@ def _save_habits(conn, state: GameState) -> None:
     for h in state.habits.values():
         conn.execute(
             "INSERT INTO habits (id, name, habit_type, rank, target, periodicity, streak_threshold, streak,"
-            " created_on, archived, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " created_on, archived, unit, reminder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (h.id, h.name, h.habit_type.value, h.rank, h.target, h.periodicity.value, h.streak_threshold,
-             h.streak, _d(h.created_on), int(h.archived), h.unit),
+             h.streak, _d(h.created_on), int(h.archived), h.unit,
+             h.reminder.strftime("%H:%M") if h.reminder else None),
         )
         conn.executemany("INSERT INTO habit_weights VALUES (?, ?, ?)",
                          [(h.id, a, w) for a, w in h.attribute_weights.items()])
@@ -160,11 +161,12 @@ def _load_habits(conn) -> dict[int, Habit]:
     for hid, tag in conn.execute("SELECT habit_id, tag FROM habit_tags ORDER BY habit_id, position"):
         tags.setdefault(hid, []).append(tag)
     habits = {}
-    for hid, name, htype, rank, target, period, threshold, streak, created, archived, unit in conn.execute(
-            "SELECT id, name, habit_type, rank, target, periodicity, streak_threshold, streak, created_on,"
-            " archived, unit FROM habits ORDER BY id"):
+    for hid, name, htype, rank, target, period, threshold, streak, created, archived, unit, reminder in \
+            conn.execute("SELECT id, name, habit_type, rank, target, periodicity, streak_threshold, streak,"
+                         " created_on, archived, unit, reminder FROM habits ORDER BY id"):
         habits[hid] = Habit(name, HabitType(htype), rank, weights[hid], target, Periodicity(period),
-                            threshold, streak, tags.get(hid, []), hid, _p(created), bool(archived), unit)
+                            threshold, streak, tags.get(hid, []), hid, _p(created), bool(archived), unit,
+                            time.fromisoformat(reminder) if reminder else None)
     return habits
 
 

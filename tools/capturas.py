@@ -18,7 +18,8 @@ from awaken.engine import items  # noqa: E402
 from awaken.engine.habits import Habit, HabitType, Periodicity  # noqa: E402
 from awaken.services.game_service import GameService  # noqa: E402
 from awaken.ui.habit_dialog import HabitDialog  # noqa: E402
-from awaken.ui.main_window import AwakeningDialog, MainWindow  # noqa: E402
+from awaken.services import security  # noqa: E402
+from awaken.ui.main_window import AwakeningDialog, MainWindow, PinDialog  # noqa: E402
 from awaken.ui.theme import STYLESHEET  # noqa: E402
 from awaken.ui.widgets import SystemPopup  # noqa: E402
 
@@ -115,6 +116,7 @@ def main(out: Path) -> None:
                                      "clear the Penalty Quest.", "penalty"),
         "dialog_new_quest": HabitDialog(),
         "dialog_awakening": AwakeningDialog(service),
+        "dialog_pin": PinDialog(security.PinGate(security.hash_pin("1234"))),
     }
     for name, widget in extras.items():
         widget.show()

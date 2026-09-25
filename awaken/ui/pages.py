@@ -6,11 +6,13 @@ from datetime import date
 from PySide6.QtCore import QDate, QRectF, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QDateEdit,
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -386,25 +388,82 @@ class AchievementsPage(Page):
 class SettingsPage(Page):
     def __init__(self, service, on_change):
         super().__init__(service, on_change, "Settings")
-        self.content.addWidget(QLabel("Pause mode (holidays, illness) — paused days don't count"))
+
+        # ---- pausa ----
+        self.content.addWidget(self.section("Pause mode"))
+        self.content.addWidget(self.dim("Holidays or illness: paused days don't count (no HP loss, streaks kept)."))
         row = QHBoxLayout()
         self.start, self.end = QDateEdit(), QDateEdit()
         for w in (self.start, self.end):
             w.setCalendarPopup(True)
             w.setDisplayFormat("dd/MM/yyyy")
-        row.addWidget(QLabel("From"))
-        row.addWidget(self.start)
-        row.addWidget(QLabel("to"))
-        row.addWidget(self.end)
         pause = QPushButton("Pause")
         pause.clicked.connect(self._pause)
-        row.addWidget(pause)
+        for w in (QLabel("From"), self.start, QLabel("to"), self.end, pause):
+            row.addWidget(w)
         row.addStretch()
         self.content.addLayout(row)
         self.paused = self.dim("")
         self.content.addWidget(self.paused)
-        self.content.addWidget(self.dim("PIN, reminders and optional AI skill names arrive in the next phase."))
+
+        # ---- PIN ----
+        self.content.addWidget(self.section("PIN"))
+        self.pin_status = self.dim("")
+        self.content.addWidget(self.pin_status)
+        row = QHBoxLayout()
+        self.current_pin, self.new_pin = QLineEdit(), QLineEdit()
+        for w, hint in ((self.current_pin, "Current PIN"), (self.new_pin, "New PIN (4–6 digits)")):
+            w.setEchoMode(QLineEdit.Password)
+            w.setPlaceholderText(hint)
+            w.setMaxLength(6)
+            w.setFixedWidth(170)
+            row.addWidget(w)
+        self.set_pin_button = QPushButton("Set PIN")
+        self.set_pin_button.clicked.connect(self._set_pin)
+        self.remove_pin_button = QPushButton("Remove PIN")
+        self.remove_pin_button.setObjectName("Danger")
+        self.remove_pin_button.clicked.connect(self._remove_pin)
+        row.addWidget(self.set_pin_button)
+        row.addWidget(self.remove_pin_button)
+        row.addStretch()
+        self.content.addLayout(row)
+        self.content.addWidget(self.dim("The PIN is stored only as a salted PBKDF2 hash. It locks the app; "
+                                        "it does not encrypt the data file."))
+
+        # ---- janela e lembretes ----
+        self.content.addWidget(self.section("Window & reminders"))
+        self.tray = QCheckBox("Keep running next to the clock when the window is closed (needed for reminders)")
+        self.tray.toggled.connect(self.service.set_minimize_to_tray)
+        self.content.addWidget(self.tray)
+        self.content.addWidget(self.dim("Set a reminder time on each quest (Edit quest → Reminder)."))
+
+        # ---- IA ----
+        self.content.addWidget(self.section("AI skill names (optional)"))
+        self.ai = QCheckBox("Let Claude name new skills")
+        self.ai.toggled.connect(self.service.set_ai_skill_names)
+        self.content.addWidget(self.ai)
+        row = QHBoxLayout()
+        self.api_key = QLineEdit()
+        self.api_key.setEchoMode(QLineEdit.Password)
+        self.api_key.setPlaceholderText("Anthropic API key")
+        save_key, forget_key = QPushButton("Save key"), QPushButton("Forget key")
+        save_key.clicked.connect(lambda: self._store_key(self.api_key.text()))
+        forget_key.clicked.connect(lambda: self._store_key(None))
+        row.addWidget(self.api_key, 1)
+        row.addWidget(save_key)
+        row.addWidget(forget_key)
+        self.content.addLayout(row)
+        self.key_status = self.dim("")
+        self.content.addWidget(self.key_status)
+        self.content.addWidget(self.dim("Only the quest name, attribute and milestone are sent. Without a key, "
+                                        "internet or on any error, skills are named offline from built-in tables. "
+                                        "The key is kept in the Windows Credential Manager, never in the app data."))
         self.content.addStretch()
+
+    def section(self, title: str) -> QLabel:
+        label = QLabel(title)
+        label.setStyleSheet(f"color: {theme.GLOW}; font-size: 15px; font-weight: bold; margin-top: 10px;")
+        return label
 
     def refresh(self) -> None:
         today = QDate(self.service.today.year, self.service.today.month, self.service.today.day)
@@ -415,6 +474,17 @@ class SettingsPage(Page):
         upcoming = sorted(d for d in self.service.state.paused_days if d >= self.service.today)
         self.paused.setText("Paused days: " + ", ".join(f"{d:%d/%m}" for d in upcoming) if upcoming
                             else "No pauses scheduled.")
+        has_pin = self.service.has_pin
+        self.pin_status.setText("A PIN is required to open the app." if has_pin else "No PIN set.")
+        self.current_pin.setVisible(has_pin)
+        self.remove_pin_button.setVisible(has_pin)
+        self.set_pin_button.setText("Change PIN" if has_pin else "Set PIN")
+        for box, value in ((self.tray, self.service.minimize_to_tray), (self.ai, self.service.ai_skill_names)):
+            box.blockSignals(True)
+            box.setChecked(value)
+            box.blockSignals(False)
+        from ..services.ai_namer import load_api_key
+        self.key_status.setText("API key found." if load_api_key() else "No API key saved.")
 
     def _pause(self) -> None:
         start, end = self.start.date().toPython(), self.end.date().toPython()
@@ -424,3 +494,35 @@ class SettingsPage(Page):
             QMessageBox.warning(self, "Pause", str(e))
             return
         self.on_change()
+
+    def _set_pin(self) -> None:
+        try:
+            self.service.set_pin(self.new_pin.text(), self.current_pin.text())
+        except ValueError as e:
+            QMessageBox.warning(self, "PIN", str(e))
+            return
+        self.current_pin.clear()
+        self.new_pin.clear()
+        QMessageBox.information(self, "PIN", "PIN saved.")
+        self.refresh()
+
+    def _remove_pin(self) -> None:
+        try:
+            self.service.remove_pin(self.current_pin.text())
+        except ValueError as e:
+            QMessageBox.warning(self, "PIN", str(e))
+            return
+        self.current_pin.clear()
+        self.refresh()
+
+    def _store_key(self, key: str | None) -> None:
+        from ..services.ai_namer import save_api_key
+        try:
+            save_api_key(key.strip() if key else None)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as e:   # keyring não instalado / sem cofre / erros nativos (ver ai_namer.load_api_key)
+            QMessageBox.warning(self, "API key", f"Could not access the system credential store: {e}")
+            return
+        self.api_key.clear()
+        self.refresh()

@@ -1,6 +1,6 @@
 import random
 import sqlite3
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 
 import pytest
 
@@ -22,7 +22,8 @@ def rich_state() -> GameState:
     """Um jogo com um pouco de tudo: hábitos de vários tipos, dias fechados, Skills, loot, pausa, penalty."""
     s = GameState(player=Player("Jin", hp=40, gold=900), created_on=MONDAY)
     study = s.add_habit(Habit("Study Japanese", HabitType.TIMER, "C", {"INT": 0.6, "WIS": 0.3, "TEN": 0.1},
-                              target=60, tags=["language"], streak_threshold=0.8), MONDAY)
+                              target=60, tags=["language"], streak_threshold=0.8,
+                              reminder=time(7, 30)), MONDAY)
     water = s.add_habit(Habit("Water", HabitType.QUANTITY, "E", {"VIT": 1.0}, target=2.0, unit="L"), MONDAY)
     s.add_habit(Habit("Social media", HabitType.LIMIT, "B", {"TEN": 0.7, "PER": 0.3}, target=0), MONDAY)
     s.add_habit(Habit("Gym", HabitType.COUNTER, "A", {"STR": 0.6, "END": 0.4}, target=3,

@@ -2,7 +2,7 @@
 
 import math
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, time
 from enum import Enum
 
 from . import config
@@ -53,6 +53,7 @@ class Habit:
     created_on: date | None = None                  # dias antes da criação não contam no 1.º período
     archived: bool = False                          # arquivado: sai das Quests, mas o histórico fica
     unit: str = ""                                  # ex.: "L", "pages" (os TIMER são sempre em minutos)
+    reminder: time | None = None                    # hora do lembrete diário (se ainda não estiver cumprido)
 
     def __post_init__(self):
         if self.rank not in config.HABIT_RANKS:

@@ -150,7 +150,12 @@ MIGRATION_V3 = """
 ALTER TABLE habits ADD COLUMN unit TEXT NOT NULL DEFAULT '';
 """
 
-MIGRATIONS = [SCHEMA_V1, MIGRATION_V2, MIGRATION_V3]   # MIGRATIONS[i] leva a base de dados da versão i para a i+1
+# v4: hora do lembrete de cada hábito ("HH:MM" ou NULL)
+MIGRATION_V4 = """
+ALTER TABLE habits ADD COLUMN reminder TEXT;
+"""
+
+MIGRATIONS = [SCHEMA_V1, MIGRATION_V2, MIGRATION_V3, MIGRATION_V4]   # MIGRATIONS[i] leva a base de dados da versão i para a i+1
 LATEST_VERSION = len(MIGRATIONS)
 
 

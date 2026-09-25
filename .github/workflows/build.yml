@@ -1,0 +1,36 @@
+# Em cada push: corre os testes num Windows real e cria o AwakenSystem.exe
+# (descarregável em GitHub → Actions → execução → Artifacts).
+name: Tests and Windows build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      QT_QPA_PLATFORM: offscreen   # os testes da interface correm sem ecrã
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[dev,ai]" pyinstaller
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Build the .exe
+        run: python tools/build_exe.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AwakenSystem-windows
+          path: dist/AwakenSystem.exe

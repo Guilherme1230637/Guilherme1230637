@@ -1,5 +1,6 @@
 """Criar / editar uma Quest (hábito)."""
 
+from PySide6.QtCore import QTime
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -10,7 +11,9 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QLabel,
     QLineEdit,
+    QHBoxLayout,
     QSpinBox,
+    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -59,6 +62,15 @@ class HabitDialog(QDialog):
         self.threshold.setSuffix(" %")
         self.threshold.setValue(100)
         self.language = QCheckBox("Language practice (Polyglot achievement)")
+        self.remind = QCheckBox("Remind me at")
+        self.remind_time = QTimeEdit(QTime(8, 0))
+        self.remind_time.setDisplayFormat("HH:mm")
+        self.remind_time.setEnabled(False)
+        self.remind.toggled.connect(self.remind_time.setEnabled)
+        remind_row = QHBoxLayout()
+        remind_row.addWidget(self.remind)
+        remind_row.addWidget(self.remind_time)
+        remind_row.addStretch()
 
         form.addRow("Name", self.name)
         form.addRow("Repeats", self.periodicity)
@@ -69,6 +81,7 @@ class HabitDialog(QDialog):
         form.addRow("Difficulty", self.rank)
         form.addRow("Streak counts from", self.threshold)
         form.addRow("", self.language)
+        form.addRow("Reminder", remind_row)
 
         # ---- pesos dos atributos ----
         self.template = QComboBox()
@@ -120,6 +133,9 @@ class HabitDialog(QDialog):
         self.rank.setCurrentIndex(self.rank.findData(h.rank))
         self.threshold.setValue(round(h.streak_threshold * 100))
         self.language.setChecked(LANGUAGE_TAG in h.tags)
+        if h.reminder:
+            self.remind.setChecked(True)
+            self.remind_time.setTime(QTime(h.reminder.hour, h.reminder.minute))
         for attr, w in h.attribute_weights.items():
             self.weights[attr].setValue(round(w * 100))
 
@@ -155,6 +171,7 @@ class HabitDialog(QDialog):
             streak_threshold=self.threshold.value() / 100,
             tags=[LANGUAGE_TAG] if self.language.isChecked() else [],
             unit="min" if t == HabitType.TIMER else self.unit.text().strip(),
+            reminder=self.remind_time.time().toPython() if self.remind.isChecked() else None,
         )
 
     def build_habit(self) -> Habit:

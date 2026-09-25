@@ -84,3 +84,39 @@ def test_breakthrough_notification(tmp_path):
     s.state.player.level, s.state.player.gold = 10, 600
     notes = s.breakthrough()
     assert notes[0].kind == Kind.BREAKTHROUGH and "Bronze" in notes[0].message
+
+
+def test_pin_lifecycle(tmp_path):
+    s = service(tmp_path, FakeClock(MONDAY))
+    assert not s.has_pin
+    s.set_pin("1234")
+    assert s.has_pin and s.pin_gate().try_pin("1234")
+    with pytest.raises(ValueError, match="current PIN"):
+        s.set_pin("9999", current_pin="0000")
+    s.set_pin("9999", current_pin="1234")
+    with pytest.raises(ValueError):
+        s.remove_pin("1234")
+    s.remove_pin("9999")
+    assert not s.has_pin
+    stored = s.conn.execute("SELECT group_concat(value) FROM settings").fetchone()[0] or ""
+    assert "9999" not in stored                     # o PIN nunca fica guardado em claro
+
+
+def test_settings_flags_persist(tmp_path):
+    s = service(tmp_path, FakeClock(MONDAY))
+    assert s.minimize_to_tray and not s.ai_skill_names       # valores por defeito
+    s.set_ai_skill_names(True)
+    s.set_minimize_to_tray(False)
+    again = service(tmp_path, FakeClock(MONDAY))
+    assert again.ai_skill_names and not again.minimize_to_tray
+
+
+def test_due_reminders_through_service(tmp_path):
+    from datetime import datetime, time
+    s = service(tmp_path, FakeClock(MONDAY))
+    s.new_game("Jin")
+    hid = s.add_habit(Habit("Read", HabitType.CHECK, "C", {"WIS": 1.0}, reminder=time(8, 0)))
+    window = (datetime(2026, 9, 28, 7, 59), datetime(2026, 9, 28, 8, 0))
+    assert [h.id for h in s.due_reminders(*window)] == [hid]
+    s.record(hid, 1)
+    assert s.due_reminders(*window) == []

@@ -91,3 +91,36 @@ def test_spending_free_points_from_status(app, service):
     window = MainWindow(service)
     window.pages[0].status.attr_buttons["VIT"].click()
     assert service.state.player.attributes["VIT"] == 11 and service.state.player.free_points == 0
+
+
+def test_pin_dialog(app):
+    from awaken.services import security
+    from awaken.ui.main_window import PinDialog
+    dialog = PinDialog(security.PinGate(security.hash_pin("2468")))
+    dialog.pin.setText("1111")
+    dialog._try()
+    assert dialog.result() == 0 and "Wrong" in dialog.message.text()
+    dialog.pin.setText("2468")
+    dialog._try()
+    assert dialog.result() == 1
+
+
+def test_setting_a_pin_from_settings(app, service, monkeypatch):
+    monkeypatch.setattr(QtWidgets.QMessageBox, "information", lambda *a, **k: None)
+    window = MainWindow(service)
+    settings = window.pages[-1]
+    window.sidebar.setCurrentRow(len(window.pages) - 1)
+    settings.new_pin.setText("1357")
+    settings.set_pin_button.click()
+    assert service.has_pin and service.pin_gate().try_pin("1357")
+    assert settings.set_pin_button.text() == "Change PIN"
+
+
+def test_habit_dialog_reminder(app):
+    from datetime import time
+    dialog = HabitDialog()
+    dialog.name.setText("Read")
+    dialog.weights["WIS"].setValue(100)
+    assert dialog.build_habit().reminder is None
+    dialog.remind.setChecked(True)
+    assert dialog.build_habit().reminder == time(8, 0)
